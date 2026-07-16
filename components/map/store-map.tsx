@@ -23,14 +23,11 @@ import {
   GEOAPIFY_TILE_URL,
   reverseGeocode,
 } from "@/lib/geoapify";
-import {
-  DEFAULT_CENTER,
-  DEFAULT_ZOOM,
-  DUMMY_STORES,
-  type Store,
-} from "@/lib/dummy-stores";
+import { DEFAULT_CENTER, DEFAULT_ZOOM } from "@/lib/dummy-stores";
+import { useTokoList } from "@/lib/toko/hooks";
+import type { Toko } from "@/lib/toko/types";
 
-/** Ikon titik lokasi user (dot biru berdenyut). */
+// User location marker icon 
 const userIcon = L.divIcon({
   className: "",
   html: `<span class="relative flex h-4 w-4">
@@ -41,12 +38,8 @@ const userIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
-/** Helper untuk menggeser peta secara imperatif dari luar tree react-leaflet. */
-function MapController({
-  onReady,
-}: {
-  onReady: (map: L.Map) => void;
-}) {
+/** Helper to control the map imperatively from outside the react-leaflet tree. */
+function MapController({ onReady }: { onReady: (map: L.Map) => void }) {
   const map = useMap();
   onReady(map);
   return null;
@@ -60,7 +53,10 @@ type UserLocation = {
 
 export default function StoreMap() {
   const mapRef = useRef<L.Map | null>(null);
-  const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
+  const markerRefs = useRef<Record<number, LeafletMarker | null>>({});
+
+  const { data, isLoading } = useTokoList();
+  const stores: Toko[] = data ?? [];
 
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locating, setLocating] = useState(false);
@@ -68,7 +64,7 @@ export default function StoreMap() {
 
   const handleLocate = useCallback(() => {
     if (!("geolocation" in navigator)) {
-      setError("Perangkat ini tidak mendukung GPS / geolokasi.");
+      setError("This device does not support GPS / geolocation.");
       return;
     }
     setError(null);
@@ -80,12 +76,16 @@ export default function StoreMap() {
         setUserLocation({ lat, lng, address: null });
         mapRef.current?.flyTo([lat, lng], 16, { duration: 1.2 });
 
-        // Reverse geocode koordinat GPS -> alamat lewat Geoapify.
+        // Reverse geocode the GPS coordinates -> address via Geoapify.
         try {
           const result = await reverseGeocode(lat, lng);
           setUserLocation({ lat, lng, address: result.formatted });
         } catch (e) {
-          setUserLocation({ lat, lng, address: "Alamat tidak dapat dimuat." });
+          setUserLocation({
+            lat,
+            lng,
+            address: "Address could not be loaded.",
+          });
           console.error(e);
         } finally {
           setLocating(false);
@@ -95,16 +95,20 @@ export default function StoreMap() {
         setLocating(false);
         setError(
           err.code === err.PERMISSION_DENIED
-            ? "Izin lokasi ditolak. Aktifkan GPS lalu izinkan akses lokasi."
-            : "Gagal mendapatkan lokasi. Coba lagi.",
+            ? "Location permission denied. Enable GPS and allow location access."
+            : "Failed to get your location. Please try again.",
         );
       },
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
     );
   }, []);
 
-  const focusStore = useCallback((store: Store) => {
-    mapRef.current?.flyTo([store.lat, store.lng], 16, { duration: 1 });
+  const focusStore = useCallback((store: Toko) => {
+    mapRef.current?.flyTo(
+      [Number(store.latitude), Number(store.longitude)],
+      16,
+      { duration: 1 },
+    );
     markerRefs.current[store.id]?.openPopup();
   }, []);
 
@@ -123,10 +127,10 @@ export default function StoreMap() {
         />
         <TileLayer url={GEOAPIFY_TILE_URL} attribution={GEOAPIFY_ATTRIBUTION} />
 
-        {DUMMY_STORES.map((store) => (
+        {stores.map((store) => (
           <Marker
             key={store.id}
-            position={[store.lat, store.lng]}
+            position={[Number(store.latitude), Number(store.longitude)]}
             ref={(ref) => {
               markerRefs.current[store.id] = ref;
             }}
@@ -136,21 +140,28 @@ export default function StoreMap() {
                 <p className="text-sm font-semibold text-foreground">
                   {store.name}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {store.category}
-                </p>
                 <p className="text-xs text-foreground">{store.address}</p>
+                {(store.price || store.contact) && (
+                  <p className="text-xs text-muted-foreground">
+                    {store.price ? `Rp ${store.price}` : ""}
+                    {store.price && store.contact ? " · " : ""}
+                    {store.contact}
+                  </p>
+                )}
               </div>
             </Popup>
           </Marker>
         ))}
 
         {userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
+          <Marker
+            position={[userLocation.lat, userLocation.lng]}
+            icon={userIcon}
+          >
             <Popup>
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-foreground">
-                  Lokasi Anda
+                  Your Location
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
@@ -171,35 +182,36 @@ export default function StoreMap() {
         <div className="pointer-events-auto rounded-2xl bg-background/90 px-4 py-3 shadow-lg backdrop-blur">
           <h1 className="flex items-center gap-2 text-base font-semibold">
             <MapPin className="size-4 text-primary" />
-            Toko Sekitar
+            Nearby Stores
           </h1>
           <p className="text-xs text-muted-foreground">
-            {DUMMY_STORES.length} toko ditemukan · Lingkup Tani
+            {isLoading
+              ? "Loading stores…"
+              : `${stores.length} stores found · Lingkup Tani`}
           </p>
         </div>
         <StoreInfoDialog
           trigger={
             <Button
               className="pointer-events-auto rounded-full shadow-lg"
-              aria-label="Kelola info toko saya"
+              aria-label="Manage my store info"
             >
               <StoreIcon className="size-4" />
-              <span className="hidden sm:inline">Toko Saya</span>
+              <span className="hidden sm:inline">My Store</span>
             </Button>
           }
         />
       </div>
 
-      {/* Overlay bawah: tombol GPS + banner + daftar toko, ditumpuk vertikal
-          agar tidak pernah saling menimpa (penting untuk layar mobile). */}
+      {/* Bottom overlay: GPS button + banner + store list, stacked vertically */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1000 flex flex-col gap-3 pb-4">
-        {/* Tombol lokasi saya */}
+        {/* Locate-me button */}
         <div className="flex justify-end px-4">
           <Button
             size="icon"
             onClick={handleLocate}
             disabled={locating}
-            aria-label="Temukan lokasi saya"
+            aria-label="Find my location"
             className="pointer-events-auto size-12 rounded-full shadow-lg"
           >
             {locating ? (
@@ -210,7 +222,7 @@ export default function StoreMap() {
           </Button>
         </div>
 
-        {/* Notifikasi error / alamat GPS */}
+        {/* Error / GPS address notification */}
         {(error || userLocation?.address) && (
           <div className="px-4">
             <div
@@ -226,7 +238,7 @@ export default function StoreMap() {
                 <span className="flex items-start gap-2">
                   <Navigation className="mt-0.5 size-3.5 shrink-0 text-blue-600" />
                   <span>
-                    <b>Lokasi Anda:</b> {userLocation?.address}
+                    <b>Your location:</b> {userLocation?.address}
                   </span>
                 </span>
               )}
@@ -234,22 +246,28 @@ export default function StoreMap() {
           </div>
         )}
 
-        {/* Daftar toko (scroll horizontal, mobile-first) */}
-        <div className="pointer-events-auto flex gap-3 overflow-x-auto px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
-          {DUMMY_STORES.map((store) => (
-            <button
-              key={store.id}
-              onClick={() => focusStore(store)}
-              className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px"
-            >
-              <p className="truncate text-sm font-semibold">{store.name}</p>
-              <p className="mt-0.5 text-xs text-primary">{store.category}</p>
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                {store.address}
-              </p>
-            </button>
-          ))}
-        </div>
+        {/* Store list (horizontal scroll, mobile-first) */}
+        {stores.length > 0 && (
+          <div className="pointer-events-auto flex gap-3 overflow-x-auto px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
+            {stores.map((store) => (
+              <button
+                key={store.id}
+                onClick={() => focusStore(store)}
+                className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px"
+              >
+                <p className="truncate text-sm font-semibold">{store.name}</p>
+                {store.price && (
+                  <p className="mt-0.5 text-xs text-primary">
+                    Rp {store.price}
+                  </p>
+                )}
+                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                  {store.address}
+                </p>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
