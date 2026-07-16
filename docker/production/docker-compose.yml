@@ -1,0 +1,30 @@
+version: "3.9"
+name: lingkuptani
+services:
+  nextjs:
+    build:
+      context: ../../
+      dockerfile: docker/production/Dockerfile
+    container_name: lingkuptani
+    restart: unless-stopped
+
+    env_file:
+      - ../../.env
+
+    labels:
+      - "traefik.enable=true"
+
+      # Router domain Next.js
+      - "traefik.http.routers.lingkuptani.rule=Host(`lingkuptani.nafishandoko.my.id`)"
+      - "traefik.http.routers.lingkuptani.entrypoints=websecure"
+      - "traefik.http.routers.lingkuptani.tls.certresolver=letsencrypt"
+
+      # Port Next.js internal
+      - "traefik.http.services.lingkuptani.loadbalancer.server.port=3000"
+
+    networks:
+      - traefik_network
+
+networks:
+  traefik_network:
+    external: true
