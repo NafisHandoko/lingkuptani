@@ -7,10 +7,6 @@ export type Store = {
   category: string;
 };
 
-/**
- * Data dummy toko (sekitar Jakarta Pusat / Monas).
- * Ganti dengan data asli dari Supabase saat sudah siap.
- */
 export const DUMMY_STORES: Store[] = [
   {
     id: "toko-a",
@@ -54,6 +50,6 @@ export const DUMMY_STORES: Store[] = [
   },
 ];
 
-/** Titik tengah peta default (Monas, Jakarta). */
+// Default map center (Monas, Jakarta).
 export const DEFAULT_CENTER: [number, number] = [-6.1754, 106.8272];
 export const DEFAULT_ZOOM = 14;

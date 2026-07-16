@@ -1,13 +1,7 @@
 const GEOAPIFY_KEY = process.env.NEXT_PUBLIC_GEOAPIFY_KEY ?? "";
 
-/**
- * URL template tile Geoapify untuk dipakai di Leaflet <TileLayer />.
- * Gaya "carto" sesuai contoh yang diberikan. Bisa diganti gaya lain
- * (osm-bright, osm-bright-smooth, dark-matter, positron, dll).
- */
 export const GEOAPIFY_TILE_URL = `https://maps.geoapify.com/v1/tile/carto/{z}/{x}/{y}.png?apiKey=${GEOAPIFY_KEY}`;
 
-/** Attribution wajib saat memakai tile Geoapify. */
 export const GEOAPIFY_ATTRIBUTION =
   'Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Geoapify</a> | © OpenStreetMap contributors';
 
@@ -21,10 +15,7 @@ export type ReverseGeocodeResult = {
   lon: number;
 };
 
-/**
- * Reverse geocoding: ubah koordinat (lat/lon) dari GPS browser
- * menjadi alamat yang bisa dibaca, memakai Geoapify.
- */
+// Reverse geocoding: turn coordinates into address
 export async function reverseGeocode(
   lat: number,
   lon: number,
@@ -38,13 +29,13 @@ export async function reverseGeocode(
 
   const res = await fetch(url.toString());
   if (!res.ok) {
-    throw new Error(`Geoapify reverse geocode gagal: ${res.status}`);
+    throw new Error(`Geoapify reverse geocode failed: ${res.status}`);
   }
 
   const data = await res.json();
   const r = data?.results?.[0];
   if (!r) {
-    throw new Error("Alamat tidak ditemukan untuk koordinat ini.");
+    throw new Error("No address found for these coordinates.");
   }
 
   return {
