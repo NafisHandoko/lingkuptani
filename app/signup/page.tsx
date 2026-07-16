@@ -7,13 +7,9 @@ import {
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 
 export default function SignupPage() {
-	const [loading, setLoading] = useState(false)
-
-
   return (
     <main className='relative min-h-screen overflow-hidden'>
 		<Image
@@ -44,9 +40,10 @@ export default function SignupPage() {
 						placeholder='Masukkan kata sandi Anda'
 					/>
 				</Field>
-			<Button type='submit' disabled={loading}>
-					{loading ? 'Loading...' : 'Masuk'}
-				</Button>
+			<Button type='submit'>Buat akun</Button>
+			<a href="/login" className='flex items-center gap-2 text-sm font-medium text-zinc-950 dark:text-zinc-50'>
+				Sudah punya akun? Masuk di sini
+			</a>
 		  </form>
 		</Card>
 		</div>

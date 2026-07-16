@@ -1,7 +1,3 @@
-'use client'
-
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
 import { login } from '@/lib/login/action'
 import { Field, FieldLabel } from '@/components/ui/field'
 import Image from 'next/image'
@@ -10,32 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false)
-
-  const handleGoogleSignIn = async () => {
-    setLoading(true)
-
-    const origin = window.location.origin
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${origin}/api/auth/callback`,
-      },
-    })
-
-    if (error) {
-      console.error(error)
-      setLoading(false)
-      return
-    }
-
-    if (data.url) {
-      window.location.href = data.url
-    } else {
-      setLoading(false)
-    }
-  }
-
   return (
 	
   <main className='relative min-h-screen overflow-hidden'>
@@ -67,9 +37,10 @@ export default function LoginPage() {
 					placeholder='Masukkan kata sandi Anda'
 				/>
 			</Field>
-        <Button type='submit' disabled={loading}>
-				{loading ? 'Loading...' : 'Masuk'}
-			</Button>
+        <Button type='submit'>Masuk</Button>
+		<a href="/signup" className='flex items-center gap-2 text-sm font-medium text-zinc-950 dark:text-zinc-50'>
+          Belum punya akun? Daftar di sini
+        </a>
       </form>
     </Card>
     </div>
