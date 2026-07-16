@@ -5,6 +5,14 @@ import dynamic from "next/dynamic";
 import { Check, Loader2, LocateFixed, MapPin, Store } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { reverseGeocode } from "@/lib/geoapify";
@@ -23,7 +31,12 @@ const LocationPickerMap = dynamic(
 
 type LatLng = { lat: number; lng: number };
 
-export default function TokoPage() {
+export default function StoreInfoDialog({
+  trigger,
+}: {
+  trigger: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [coords, setCoords] = useState<LatLng | null>(null);
   const [address, setAddress] = useState("");
@@ -59,10 +72,7 @@ export default function TokoPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocating(false);
-        applyLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
+        applyLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       (err) => {
         setLocating(false);
@@ -85,26 +95,32 @@ export default function TokoPage() {
   const canSave = name.trim() !== "" && coords !== null && address.trim() !== "";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-muted/40">
-      {/* Peta pemilih lokasi */}
-      <div className="relative h-[45dvh] w-full shrink-0">
-        <LocationPickerMap value={coords} onChange={applyLocation} />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] p-3">
-          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-background/90 px-3 py-1.5 text-xs font-medium shadow backdrop-blur">
-            <MapPin className="size-3.5 text-primary" />
-            Ketuk peta atau geser pin untuk menentukan titik toko
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="p-0">
+        <DialogHeader className="pb-2">
+          <DialogTitle>
+            <Store className="size-5 text-primary" />
+            Informasi Toko
+          </DialogTitle>
+          <DialogDescription>
+            Tentukan titik lokasi toko, alamat terisi otomatis dari koordinat.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Peta pemilih lokasi */}
+        <div className="relative mx-5 h-52 shrink-0 overflow-hidden rounded-xl border">
+          <LocationPickerMap value={coords} onChange={applyLocation} />
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] p-2">
+            <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium shadow backdrop-blur">
+              <MapPin className="size-3 text-primary" />
+              Ketuk peta atau geser pin
+            </span>
           </div>
         </div>
-      </div>
 
-      {/* Form Info Toko */}
-      <div className="mx-auto -mt-4 w-full max-w-lg flex-1 rounded-t-3xl bg-background p-5 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
-        <div className="mb-4 flex items-center gap-2">
-          <Store className="size-5 text-primary" />
-          <h1 className="text-lg font-semibold">Informasi Toko</h1>
-        </div>
-
-        <div className="space-y-4">
+        {/* Form */}
+        <div className="space-y-4 overflow-y-auto p-5 pt-4">
           <div className="space-y-1.5">
             <Label htmlFor="name">Nama Toko</Label>
             <Input
@@ -186,8 +202,8 @@ export default function TokoPage() {
               className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             />
             <p className="text-xs text-muted-foreground">
-              Alamat di-generate otomatis dari koordinat (Geoapify), tetap bisa
-              kamu perbaiki manual.
+              Di-generate otomatis dari koordinat (Geoapify), tetap bisa
+              diperbaiki manual.
             </p>
           </div>
 
@@ -197,11 +213,7 @@ export default function TokoPage() {
             </p>
           )}
 
-          <Button
-            onClick={handleSave}
-            disabled={!canSave}
-            className="h-11 w-full"
-          >
+          <Button onClick={handleSave} disabled={!canSave} className="h-11 w-full">
             {saved ? (
               <>
                 <Check className="size-4" /> Tersimpan
@@ -211,7 +223,7 @@ export default function TokoPage() {
             )}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   MapContainer,
   Marker,
@@ -19,6 +19,19 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM } from "@/lib/dummy-stores";
 
 type LatLng = { lat: number; lng: number };
 
+/**
+ * Saat map dirender di dalam dialog/modal, ukuran container awalnya 0
+ * sehingga tile tampil abu-abu. Recalculate ukuran setelah animasi buka.
+ */
+function InvalidateSizeOnMount() {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => map.invalidateSize(), 250);
+    return () => clearTimeout(t);
+  }, [map]);
+  return null;
+}
+
 /** Klik di peta => pindahkan titik toko ke posisi itu. */
 function ClickToPlace({ onPick }: { onPick: (p: LatLng) => void }) {
   useMapEvents({
@@ -32,16 +45,12 @@ function ClickToPlace({ onPick }: { onPick: (p: LatLng) => void }) {
 /** Geser peta mengikuti titik saat berubah dari luar (mis. tombol GPS). */
 function RecenterOnChange({ value }: { value: LatLng | null }) {
   const map = useMap();
-  const last = useRef<string>("");
-  if (value) {
-    const key = `${value.lat},${value.lng}`;
-    if (key !== last.current) {
-      last.current = key;
-      map.flyTo([value.lat, value.lng], Math.max(map.getZoom(), 16), {
-        duration: 1,
-      });
-    }
-  }
+  const lat = value?.lat;
+  const lng = value?.lng;
+  useEffect(() => {
+    if (lat == null || lng == null) return;
+    map.flyTo([lat, lng], Math.max(map.getZoom(), 16), { duration: 1 });
+  }, [map, lat, lng]);
   return null;
 }
 
@@ -74,6 +83,7 @@ export default function LocationPickerMap({
       className="h-full w-full"
     >
       <TileLayer url={GEOAPIFY_TILE_URL} attribution={GEOAPIFY_ATTRIBUTION} />
+      <InvalidateSizeOnMount />
       <ClickToPlace onPick={onChange} />
       <RecenterOnChange value={value} />
       {value && (

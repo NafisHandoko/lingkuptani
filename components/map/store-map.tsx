@@ -4,13 +4,20 @@ import { useCallback, useRef, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import type { Marker as LeafletMarker } from "leaflet";
 import L from "leaflet";
-import { LocateFixed, Loader2, MapPin, Navigation } from "lucide-react";
+import {
+  LocateFixed,
+  Loader2,
+  MapPin,
+  Navigation,
+  Store as StoreIcon,
+} from "lucide-react";
 
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import "leaflet-defaulticon-compatibility";
 
 import { Button } from "@/components/ui/button";
+import StoreInfoDialog from "@/components/toko/store-info-dialog";
 import {
   GEOAPIFY_ATTRIBUTION,
   GEOAPIFY_TILE_URL,
@@ -160,7 +167,7 @@ export default function StoreMap() {
       </MapContainer>
 
       {/* Header */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] p-4">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-1000 flex items-start justify-between gap-2 p-4">
         <div className="pointer-events-auto rounded-2xl bg-background/90 px-4 py-3 shadow-lg backdrop-blur">
           <h1 className="flex items-center gap-2 text-base font-semibold">
             <MapPin className="size-4 text-primary" />
@@ -170,52 +177,65 @@ export default function StoreMap() {
             {DUMMY_STORES.length} toko ditemukan · Lingkup Tani
           </p>
         </div>
+        <StoreInfoDialog
+          trigger={
+            <Button
+              className="pointer-events-auto rounded-full shadow-lg"
+              aria-label="Kelola info toko saya"
+            >
+              <StoreIcon className="size-4" />
+              <span className="hidden sm:inline">Toko Saya</span>
+            </Button>
+          }
+        />
       </div>
 
-      {/* Tombol lokasi saya */}
-      <div className="absolute bottom-44 right-4 z-[1000]">
-        <Button
-          size="icon"
-          onClick={handleLocate}
-          disabled={locating}
-          aria-label="Temukan lokasi saya"
-          className="size-12 rounded-full shadow-lg"
-        >
-          {locating ? (
-            <Loader2 className="size-5 animate-spin" />
-          ) : (
-            <LocateFixed className="size-5" />
-          )}
-        </Button>
-      </div>
-
-      {/* Notifikasi error / alamat GPS */}
-      {(error || userLocation?.address) && (
-        <div className="absolute inset-x-0 bottom-40 z-[1000] px-4">
-          <div
-            className={`rounded-xl px-4 py-2 text-xs shadow-lg backdrop-blur ${
-              error
-                ? "bg-destructive/10 text-destructive"
-                : "bg-background/90 text-foreground"
-            }`}
+      {/* Overlay bawah: tombol GPS + banner + daftar toko, ditumpuk vertikal
+          agar tidak pernah saling menimpa (penting untuk layar mobile). */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1000 flex flex-col gap-3 pb-4">
+        {/* Tombol lokasi saya */}
+        <div className="flex justify-end px-4">
+          <Button
+            size="icon"
+            onClick={handleLocate}
+            disabled={locating}
+            aria-label="Temukan lokasi saya"
+            className="pointer-events-auto size-12 rounded-full shadow-lg"
           >
-            {error ? (
-              error
+            {locating ? (
+              <Loader2 className="size-5 animate-spin" />
             ) : (
-              <span className="flex items-start gap-2">
-                <Navigation className="mt-0.5 size-3.5 shrink-0 text-blue-600" />
-                <span>
-                  <b>Lokasi Anda:</b> {userLocation?.address}
-                </span>
-              </span>
+              <LocateFixed className="size-5" />
             )}
-          </div>
+          </Button>
         </div>
-      )}
 
-      {/* Daftar toko (scroll horizontal, mobile-first) */}
-      <div className="absolute inset-x-0 bottom-0 z-[1000] pb-4">
-        <div className="flex gap-3 overflow-x-auto px-4 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* Notifikasi error / alamat GPS */}
+        {(error || userLocation?.address) && (
+          <div className="px-4">
+            <div
+              className={`pointer-events-auto rounded-xl px-4 py-2 text-xs shadow-lg backdrop-blur ${
+                error
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-background/90 text-foreground"
+              }`}
+            >
+              {error ? (
+                error
+              ) : (
+                <span className="flex items-start gap-2">
+                  <Navigation className="mt-0.5 size-3.5 shrink-0 text-blue-600" />
+                  <span>
+                    <b>Lokasi Anda:</b> {userLocation?.address}
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Daftar toko (scroll horizontal, mobile-first) */}
+        <div className="pointer-events-auto flex gap-3 overflow-x-auto px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
           {DUMMY_STORES.map((store) => (
             <button
               key={store.id}
