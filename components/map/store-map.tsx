@@ -7,6 +7,7 @@ import L from "leaflet";
 import {
   LocateFixed,
   Loader2,
+  LogOut,
   MapPin,
   Navigation,
   Store as StoreIcon,
@@ -18,6 +19,7 @@ import "leaflet-defaulticon-compatibility";
 
 import { Button } from "@/components/ui/button";
 import StoreInfoDialog from "@/components/toko/store-info-dialog";
+import { signout } from "@/lib/logout/action";
 import {
   GEOAPIFY_ATTRIBUTION,
   GEOAPIFY_TILE_URL,
@@ -27,7 +29,7 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM } from "@/lib/dummy-stores";
 import { useTokoList } from "@/lib/toko/hooks";
 import type { Toko } from "@/lib/toko/types";
 
-// User location marker icon 
+// User location marker icon
 const userIcon = L.divIcon({
   className: "",
   html: `<span class="relative flex h-4 w-4">
@@ -190,17 +192,30 @@ export default function StoreMap() {
               : `${stores.length} stores found · Lingkup Tani`}
           </p>
         </div>
-        <StoreInfoDialog
-          trigger={
+        <div className="pointer-events-auto flex items-center gap-2">
+          <StoreInfoDialog
+            trigger={
+              <Button
+                className="rounded-full shadow-lg"
+                aria-label="Manage my store info"
+              >
+                <StoreIcon className="size-4" />
+                <span className="hidden sm:inline">My Store</span>
+              </Button>
+            }
+          />
+          <form action={signout}>
             <Button
-              className="pointer-events-auto rounded-full shadow-lg"
-              aria-label="Manage my store info"
+              type="submit"
+              variant="outline"
+              size="icon"
+              aria-label="Log out"
+              className="cursor-pointer rounded-full bg-background/90 shadow-lg backdrop-blur"
             >
-              <StoreIcon className="size-4" />
-              <span className="hidden sm:inline">My Store</span>
+              <LogOut className="size-4" />
             </Button>
-          }
-        />
+          </form>
+        </div>
       </div>
 
       {/* Bottom overlay: GPS button + banner + store list, stacked vertically */}
