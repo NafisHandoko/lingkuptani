@@ -25,9 +25,9 @@ const LocationPickerMap = dynamic(
 type LatLng = { lat: number; lng: number };
 
 const DEMAND_FIELDS: { key: keyof Demand; label: string }[] = [
-  { key: "padi", label: "Rice" },
-  { key: "jagung", label: "Corn" },
-  { key: "mangga", label: "Mango" },
+  { key: "padi", label: "Padi" },
+  { key: "jagung", label: "Jagung" },
+  { key: "mangga", label: "Mangga" },
 ];
 
 export type StoreFormProps = {
