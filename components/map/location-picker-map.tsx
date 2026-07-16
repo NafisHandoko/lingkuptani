@@ -19,10 +19,9 @@ import { DEFAULT_CENTER, DEFAULT_ZOOM } from "@/lib/dummy-stores";
 
 type LatLng = { lat: number; lng: number };
 
-/**
- * Saat map dirender di dalam dialog/modal, ukuran container awalnya 0
- * sehingga tile tampil abu-abu. Recalculate ukuran setelah animasi buka.
- */
+
+// When the map renders inside a dialog/modal, the container size starts at 0
+// so tiles show up gray. Recalculate the size after the open animation
 function InvalidateSizeOnMount() {
   const map = useMap();
   useEffect(() => {
@@ -32,7 +31,7 @@ function InvalidateSizeOnMount() {
   return null;
 }
 
-/** Klik di peta => pindahkan titik toko ke posisi itu. */
+// Click on the map => move the store point to that position
 function ClickToPlace({ onPick }: { onPick: (p: LatLng) => void }) {
   useMapEvents({
     click(e) {
@@ -42,7 +41,7 @@ function ClickToPlace({ onPick }: { onPick: (p: LatLng) => void }) {
   return null;
 }
 
-/** Geser peta mengikuti titik saat berubah dari luar (mis. tombol GPS). */
+// Pan the map to follow the point when it changes externally (e.g. GPS button)
 function RecenterOnChange({ value }: { value: LatLng | null }) {
   const map = useMap();
   const lat = value?.lat;
