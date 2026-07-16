@@ -11,10 +11,29 @@ export async function GET(request: Request) {
     //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     // }
 
-    const { data, error } = await supabase
+    // ?mine=true => only stores owned by the currently logged-in user.
+    const mine =
+      new URL(request.url).searchParams.get("mine") === "true";
+
+    let query = supabase
       .from("toko")
       .select("*")
       .order("created_at", { ascending: true });
+
+    if (mine) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      query = query.eq("user_id", session.user.id);
+    }
+
+
+    const { data, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

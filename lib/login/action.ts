@@ -1,23 +1,37 @@
-'use server'
+// Login now goes through the JSON route handler `POST /api/auth/login`
+// (called via fetch from app/login/page.tsx), so this Server Action is unused.
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { createSupabaseServer } from '@/lib/supabase/server'
+// 'use server'
 
-export async function login(formData: FormData) {
-  const supabase = await createSupabaseServer()
+// import { revalidatePath } from 'next/cache'
+// import { redirect } from 'next/navigation'
+// import { createSupabaseServer } from '@/lib/supabase/server'
 
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
+// export type AuthState = { error?: string }
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+// export async function login(
+//   _prevState: AuthState,
+//   formData: FormData,
+// ): Promise<AuthState> {
+//   const supabase = await createSupabaseServer()
 
-  if (error) {
-    redirect('/error')
-  }
+//   const data = {
+//     email: formData.get('email') as string,
+//     password: formData.get('password') as string,
+//   }
 
-  revalidatePath('/', 'layout')
-  redirect('/map')
-}
+//   const { error } = await supabase.auth.signInWithPassword(data)
+
+//   if (error) {
+//     const message =
+//       error.message === 'Invalid login credentials'
+//         ? 'Email atau kata sandi salah.'
+//         : error.message
+//     return { error: message }
+//   }
+
+//   revalidatePath('/', 'layout')
+//   redirect('/map')
+// }
+
+export {}
