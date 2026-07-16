@@ -5,11 +5,11 @@ export async function GET(request: Request) {
   try {
     const supabase = await createSupabaseServer();
     
-    const { data: { session } } = await supabase.auth.getSession();
+    // const { data: { session } } = await supabase.auth.getSession();
     
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // if (!session) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // }
     
     const { data, error } = await supabase
         .from('toko')
