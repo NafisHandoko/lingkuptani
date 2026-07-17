@@ -263,41 +263,49 @@ export default function StoreMap() {
               markerRefs.current[store.id] = ref;
             }}
           >
-            <Popup maxWidth={280} minWidth={220}>
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-foreground">
+            <Popup maxWidth={240} minWidth={190}>
+              <div className="space-y-1 text-foreground">
+                <p className="text-xs sm:text-sm font-semibold leading-tight">
                   {store.name}
                 </p>
-                <p className="text-xs text-foreground">{store.address}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 leading-snug">
+                  {store.address}
+                </p>
                 {store.contact && (
-                  <div className="flex items-center gap-1">
-				  <p className="text-xs text-foreground">
-								Kontak: {store.contact}
-							</p><Button><a href={`https://wa.me/62${store.contact.substring(1)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.25rem", textDecoration: "none", color: "inherit" }}>
-								<PhoneCall className="size-4" />WA
-							</a></Button>
-							</div>
+                  <div className="flex items-center gap-1.5 py-0.5">
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">
+                      Kontak: {store.contact}
+                    </span>
+                    <a
+                      href={`https://wa.me/62${store.contact.substring(1)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 rounded bg-emerald-500 hover:bg-emerald-600 px-1.5 py-0.5 text-[9px] font-medium text-white shadow-xs transition-colors"
+                    >
+                      <PhoneCall className="size-2.5" /> WA
+                    </a>
+                  </div>
                 )}
                 {distance != null && (
                   <p
-                    className="text-xs font-medium"
+                    className="text-[10px] sm:text-xs font-semibold"
                     style={{ color: "#2FA084" }}
                   >
                     {formatDistance(distance)} dari lokasi Anda
                     {inRadius ? " · dalam radius" : ""}
                   </p>
                 )}
-                <Card className="rounded-lg border bg-background/90 shadow-lg backdrop-blur">
-                  <CardContent className="space-y-2 p-3 py-0">
-                    <CardTitle className="text-sm font-semibold text-foreground">
+                <Card className="rounded-lg border bg-background/95 shadow-sm">
+                  <CardContent className="space-y-1.5 p-2 sm:p-3">
+                    <CardTitle className="text-xs sm:text-sm font-semibold text-foreground">
                       Kebutuhan
                     </CardTitle>
                     {store.demand.length > 0 ? (
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {store.demand.map((demand, index) => (
                           <p
                             key={`${demand.commodity}-${index}`}
-                            className="text-xs text-muted-foreground"
+                            className="text-[10px] sm:text-xs text-muted-foreground leading-tight"
                           >
                             {demand.commodity}: {demand.demand} kg @ Rp{" "}
                             {demand.price} / kg
@@ -305,23 +313,23 @@ export default function StoreMap() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
                         Kebutuhan terpenuhi
                       </p>
                     )}
-					{store.demand.reduce((sum, item) => sum + item.demand, 0) > 0 && (
-            <SellInfoDialog
-            toko={store}
-							trigger={
-							<Button
-								className="rounded-full shadow-lg w-full"
-								aria-label="Jual ke sini"
-							>
-								<span>Jual ke sini</span>
-							</Button>
-							}
-						/>
-					)}
+                    {store.demand.reduce((sum, item) => sum + item.demand, 0) > 0 && (
+                      <SellInfoDialog
+                        toko={store}
+                        trigger={
+                          <Button
+                            className="h-7 sm:h-9 w-full rounded-full text-[11px] sm:text-xs font-medium shadow-md mt-1"
+                            aria-label="Jual ke sini"
+                          >
+                            <span>Jual ke sini</span>
+                          </Button>
+                        }
+                      />
+                    )}
                   </CardContent>
                 </Card>
               </div>
