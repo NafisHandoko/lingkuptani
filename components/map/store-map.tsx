@@ -47,19 +47,19 @@ const userIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
-// Radius feature palette (EEEEEE, 6FCF97, 2FA084, 1F6F5F). 6FCF97 is primary.
-const RADIUS_PALETTE = {
-  base: "#6FCF97", // circle fill/stroke + active chip
-  accent: "#2FA084", // in-radius pin + green text (readable)
-  dark: "#1F6F5F", // active chip text
-};
+// Reads a CSS variable (design token) from globals.css, e.g. cssVar("--chart-1").
+// Needed because Leaflet draws pins/circles as raw SVG where Tailwind classes
+// like `text-primary` don't apply — so we grab the hex value directly.
+// `fallback` covers the server (no `window`), where the map never renders anyway.
+function cssVar(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return value || fallback;
+}
 
 // Colored store pin icons (cached per color).
-const STORE_COLOR = {
-  in: RADIUS_PALETTE.accent,
-  out: "#64748b",
-  default: "#2563eb",
-};
 const pinCache: Record<string, L.DivIcon> = {};
 function pinIcon(color: string) {
   if (!pinCache[color]) {
@@ -123,6 +123,22 @@ export default function StoreMap() {
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [radiusM, setRadiusM] = useState(1000);
+
+  // Palette pulled from globals.css design tokens (single source of truth).
+  const palette = useMemo(
+    () => ({
+      base: cssVar("--chart-1", "#6FCF97"), // circle + active chip background
+      accent: cssVar("--chart-2", "#2FA084"), // in-radius pin + distance text
+      dark: cssVar("--chart-3", "#1F6F5F"), // active chip text (readable on green)
+    }),
+    [],
+  );
+  // Store pin colors: in-radius uses the palette; out/default are deliberate
+  // neutral & blue states that aren't part of the brand palette.
+  const storeColor = useMemo(
+    () => ({ in: palette.accent, out: "#64748b", default: "#2563eb" }),
+    [palette],
+  );
 
   // Attach distance-from-user (meters) & in-radius flag to each store.
   const storesWithDistance = useMemo(() => {
@@ -216,8 +232,8 @@ export default function StoreMap() {
             center={[userLocation.lat, userLocation.lng]}
             radius={radiusM}
             pathOptions={{
-              color: RADIUS_PALETTE.base,
-              fillColor: RADIUS_PALETTE.base,
+              color: palette.base,
+              fillColor: palette.base,
               fillOpacity: 0.15,
               weight: 2,
             }}
@@ -230,10 +246,10 @@ export default function StoreMap() {
             position={[Number(store.latitude), Number(store.longitude)]}
             icon={pinIcon(
               !userLocation
-                ? STORE_COLOR.default
+                ? storeColor.default
                 : inRadius
-                  ? STORE_COLOR.in
-                  : STORE_COLOR.out,
+                  ? storeColor.in
+                  : storeColor.out,
             )}
             ref={(ref) => {
               markerRefs.current[store.id] = ref;
@@ -255,7 +271,7 @@ export default function StoreMap() {
                 {distance != null && (
                   <p
                     className="text-xs font-medium"
-                    style={{ color: RADIUS_PALETTE.accent }}
+                    style={{ color: palette.accent }}
                   >
                     {formatDistance(distance)} dari lokasi Anda
                     {inRadius ? " · dalam radius" : ""}
@@ -387,8 +403,8 @@ export default function StoreMap() {
                   style={
                     radiusM === m
                       ? {
-                          backgroundColor: RADIUS_PALETTE.base,
-                          color: RADIUS_PALETTE.dark,
+                          backgroundColor: palette.base,
+                          color: palette.dark,
                         }
                       : undefined
                   }
