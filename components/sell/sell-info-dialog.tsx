@@ -17,8 +17,7 @@ import { tokoKeys } from "@/lib/toko/hooks";
 import type { Demand, Toko, TokoInput } from "@/lib/toko/types";
 import { createTransaksi } from "@/lib/transaksi/api";
 import { transaksiKeys } from "@/lib/transaksi/hooks";
-import type { TransaksiInput } from "@/lib/transaksi/types";
-import SellForm from "./sell-form";
+import SellForm, { type SellFormPayload } from "./sell-form";
 
 function subtractDemand(storeDemand: Demand, soldDemand: Demand): Demand {
   return storeDemand
@@ -59,10 +58,10 @@ export default function SellInfoDialog({
   const commodityOptions = toko.demand.filter((item) => item.demand > 0);
 
   const sellMutation = useMutation({
-    mutationFn: async (input: TransaksiInput) => {
+    mutationFn: async (input: SellFormPayload) => {
       const createdTransaction = await createTransaksi({
-        ...input,
-        toko_id: toko.id,
+        buyer: toko.id,
+        demand: input.demand,
       });
 
       const remainingDemand = subtractDemand(toko.demand, input.demand);

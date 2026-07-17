@@ -1,4 +1,4 @@
-import type { Transaksi, TransaksiInput } from "./types";
+import type { Transaksi, TransaksiInput, TransaksiStatusUpdate } from "./types";
 
 async function parse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -14,45 +14,54 @@ async function parse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// GET all stores
+// GET all transactions
 export async function fetchTransaksiList(): Promise<Transaksi[]> {
   return parse<Transaksi[]>(await fetch("/api/transaction", { cache: "no-store" }));
 }
 
-// GET stores owned by the currently logged-in user.
+// GET transactions where seller = current user
 export async function fetchMyTransaksi(): Promise<Transaksi[]> {
   return parse<Transaksi[]>(
     await fetch("/api/transaction?mine=true", { cache: "no-store" }),
   );
 }
 
-// GET a single store by id
+// GET transactions where buyer = given toko id
+export async function fetchTransaksiByTokoId(tokoId: number): Promise<Transaksi[]> {
+  return parse<Transaksi[]>(
+    await fetch(`/api/transaction?toko_id=${tokoId}`, { cache: "no-store" }),
+  );
+}
+
+// GET a single transaction by id
 export async function fetchTransaksiById(id: number): Promise<Transaksi> {
   return parse<Transaksi>(await fetch(`/api/transaction/${id}`, { cache: "no-store" }));
 }
 
-// POST a new store.
+// POST a new transaction
 export async function createTransaksi(input: TransaksiInput): Promise<Transaksi> {
   return parse<Transaksi>(
     await fetch("/api/transaction", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        toko_id: input.toko_id,
+        buyer: input.buyer,
         demand: input.demand,
-        verified: false,
       }),
     }),
   );
 }
 
-// PATCH update a store by id.
-export async function updateTransaksi(id: number, input: TransaksiInput): Promise<Transaksi> {
+// PATCH update status of a transaction (accepted | rejected)
+export async function updateTransaksiStatus(
+  id: number,
+  update: TransaksiStatusUpdate,
+): Promise<Transaksi> {
   return parse<Transaksi>(
     await fetch(`/api/transaction/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
+      body: JSON.stringify(update),
     }),
   );
 }

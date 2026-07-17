@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { History, Loader2, ShoppingCart, TrendingUp, Package, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import {
+  History,
+  Loader2,
+  ShoppingCart,
+  TrendingUp,
+  Package,
+} from "lucide-react";
 
 import {
   Dialog,
@@ -9,36 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { DialogTrigger } from "@/components/ui/dialog";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type DemandItem = {
-  commodity: string;
-  demand: number;
-  price: string | number;
-};
-
-type Transaction = {
-  id: number;
-  seller: string;   // user id (UUID)
-  buyer: number;    // toko id
-  demand: DemandItem[];
-  status: "pending" | "accepted" | "rejected";
-  created_at: string;
-};
-
-type TokoDetail = {
-  id: number;
-  name: string;
-};
-
-type UserDetail = {
-  id: string;
-  name: string | null;
-  email: string;
-};
+import { useMyToko, useToko } from "@/lib/toko/hooks";
+import { useMyTransaksi, useTransaksiByTokoId } from "@/lib/transaksi/hooks";
+import type { Transaksi } from "@/lib/transaksi/types";
+import { useUsers } from "@/lib/users/hooks";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,15 +34,9 @@ function formatDate(iso: string) {
   }).format(new Date(iso));
 }
 
-async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Gagal memuat: ${url}`);
-  return res.json();
-}
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function DemandList({ items }: { items: DemandItem[] }) {
+function DemandList({ items }: { items: Transaksi["demand"] }) {
   return (
     <div className="mt-2 space-y-1">
       {items.map((item, i) => (
@@ -97,155 +73,149 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
+// ─── Penjualan row: resolve buyer toko name via useToko hook ─────────────────
+
+function PenjualanRow({ tx }: { tx: Transaksi }) {
+  const toko = useToko(tx.buyer);
+  const tokoName = toko.data?.name ?? (toko.isLoading ? "Memuat…" : `Toko #${tx.buyer}`);
+
+  return (
+    <div
+      className="rounded-2xl p-4"
+      style={{
+        background: "#fff",
+        border: "1px solid rgba(111,207,151,0.25)",
+        boxShadow: "0 1px 6px rgba(31,111,95,0.06)",
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center justify-center w-8 h-8 rounded-xl shrink-0"
+            style={{ background: "#dff0e8" }}
+          >
+            <TrendingUp className="size-4" style={{ color: "#2FA084" }} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "#1F6F5F" }}>
+              {tokoName}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "#85b5a5" }}>
+              {formatDate(tx.created_at)}
+            </p>
+          </div>
+        </div>
+        <span
+          className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+          style={{ background: "#dff0e8", color: "#1F6F5F" }}
+        >
+          Diterima
+        </span>
+      </div>
+      <DemandList items={tx.demand} />
+    </div>
+  );
+}
+
 // ─── Penjualan Tab ────────────────────────────────────────────────────────────
-// Hits GET /api/transaction?mine=true  (seller = current user)
-// For each accepted tx, resolves buyer toko name via GET /api/toko/:id
 
-function PenjualanTab() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<{ tx: Transaction; tokoName: string }[]>([]);
+function PenjualanTab({ enabled }: { enabled: boolean }) {
+  const query = useMyTransaksi(enabled);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const all = await fetchJSON<Transaction[]>("/api/transaction?mine=true");
-        const accepted = all.filter((t) => t.status === "accepted");
-
-        // Resolve toko names in parallel, with per-item fallback
-        const resolved = await Promise.all(
-          accepted.map(async (tx) => {
-            try {
-              const toko = await fetchJSON<TokoDetail>(`/api/toko/${tx.buyer}`);
-              return { tx, tokoName: toko.name };
-            } catch {
-              return { tx, tokoName: `Toko #${tx.buyer}` };
-            }
-          })
-        );
-
-        if (!cancelled) setItems(resolved.reverse()); // newest first
-      } catch (e) {
-        if (!cancelled) setError((e as Error).message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  if (loading) return (
+  if (query.isLoading) return (
     <div className="flex items-center justify-center py-16">
       <Loader2 className="size-6 animate-spin" style={{ color: "#6FCF97" }} />
     </div>
   );
 
-  if (error) return (
-    <div className="px-5 py-4 text-sm rounded-xl mx-5" style={{ background: "rgba(220,38,38,0.08)", color: "#dc2626" }}>
-      {error}
+  if (query.isError) return (
+    <div
+      className="mx-5 px-4 py-3 rounded-xl text-sm"
+      style={{ background: "rgba(220,38,38,0.08)", color: "#dc2626" }}
+    >
+      {(query.error as Error).message}
     </div>
   );
 
-  if (items.length === 0) return (
-    <EmptyState label="Transaksi penjualan yang berhasil akan muncul di sini" />
-  );
+  const accepted = (query.data ?? [])
+    .filter((t) => t.status === "accepted")
+    .slice()
+    .reverse(); // newest first
+
+  if (accepted.length === 0)
+    return <EmptyState label="Transaksi penjualan yang berhasil akan muncul di sini" />;
 
   return (
     <div className="space-y-3 px-5 pb-5">
-      {items.map(({ tx, tokoName }) => (
-        <div
-          key={tx.id}
-          className="rounded-2xl p-4"
-          style={{
-            background: "#fff",
-            border: "1px solid rgba(111,207,151,0.25)",
-            boxShadow: "0 1px 6px rgba(31,111,95,0.06)",
-          }}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div
-                className="flex items-center justify-center w-8 h-8 rounded-xl shrink-0"
-                style={{ background: "#dff0e8" }}
-              >
-                <TrendingUp className="size-4" style={{ color: "#2FA084" }} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: "#1F6F5F" }}>
-                  {tokoName}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: "#85b5a5" }}>
-                  {formatDate(tx.created_at)}
-                </p>
-              </div>
-            </div>
-            <span
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-              style={{ background: "#dff0e8", color: "#1F6F5F" }}
-            >
-              Diterima
-            </span>
-          </div>
-          <DemandList items={tx.demand} />
-        </div>
+      {accepted.map((tx) => (
+        <PenjualanRow key={tx.id} tx={tx} />
       ))}
     </div>
   );
 }
 
+// ─── Pembelian row: resolve seller user display name ─────────────────────────
+// We use a static lookup map built once when the tab data arrives.
+
+function PembelianRow({
+  tx,
+  sellerLabel,
+}: {
+  tx: Transaksi;
+  sellerLabel: string;
+}) {
+  return (
+    <div
+      className="rounded-2xl p-4"
+      style={{
+        background: "#fff",
+        border: "1px solid rgba(111,207,151,0.25)",
+        boxShadow: "0 1px 6px rgba(31,111,95,0.06)",
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center justify-center w-8 h-8 rounded-xl shrink-0"
+            style={{ background: "#e8f5ef" }}
+          >
+            <ShoppingCart className="size-4" style={{ color: "#2FA084" }} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "#1F6F5F" }}>
+              {sellerLabel}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "#85b5a5" }}>
+              {formatDate(tx.created_at)}
+            </p>
+          </div>
+        </div>
+        <span
+          className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+          style={{ background: "#dff0e8", color: "#1F6F5F" }}
+        >
+          Diterima
+        </span>
+      </div>
+      <DemandList items={tx.demand} />
+    </div>
+  );
+}
+
 // ─── Pembelian Tab ────────────────────────────────────────────────────────────
-// Needs the user's own toko id first (GET /api/toko?mine=true)
-// Then hits GET /api/transaction?toko_id=:id  (buyer = user's toko)
-// For each accepted tx, resolves seller user via GET /api/users
 
-function PembelianTab() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<{ tx: Transaction; sellerLabel: string }[]>([]);
+function PembelianTab({ enabled }: { enabled: boolean }) {
+  // Step 1: get user's own toko
+  const myTokoQuery = useMyToko(enabled);
+  const tokoId = myTokoQuery.data?.[0]?.id ?? null;
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Step 2: fetch transactions for that toko
+  const txQuery = useTransaksiByTokoId(tokoId, enabled && tokoId != null);
 
-        // Step 1 – find the logged-in user's own toko
-        const myToko = await fetchJSON<{ id: number }[]>("/api/toko?mine=true");
-        if (!myToko.length) {
-          if (!cancelled) { setItems([]); setLoading(false); }
-          return;
-        }
-        const tokoId = myToko[0].id;
+  // Step 3: fetch all users to resolve seller name/email
+  const usersQuery = useUsers(enabled);
 
-        // Step 2 – fetch transactions for this toko
-        const all = await fetchJSON<Transaction[]>(`/api/transaction?toko_id=${tokoId}`);
-        const accepted = all.filter((t) => t.status === "accepted");
-
-        // Step 3 – fetch all users once, then map by id
-        const users = await fetchJSON<UserDetail[]>("/api/users");
-        const userMap = new Map(users.map((u) => [u.id, u]));
-
-        const resolved = accepted.map((tx) => {
-          const user = userMap.get(tx.seller);
-          const sellerLabel = user
-            ? (user.name ?? user.email)
-            : `Pengguna #${tx.seller.slice(0, 8)}…`;
-          return { tx, sellerLabel };
-        }).reverse(); // newest first
-
-        if (!cancelled) setItems(resolved);
-      } catch (e) {
-        if (!cancelled) setError((e as Error).message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const loading = myTokoQuery.isLoading || txQuery.isLoading || usersQuery.isLoading;
 
   if (loading) return (
     <div className="flex items-center justify-center py-16">
@@ -253,54 +223,40 @@ function PembelianTab() {
     </div>
   );
 
-  if (error) return (
-    <div className="px-5 py-4 text-sm rounded-xl mx-5" style={{ background: "rgba(220,38,38,0.08)", color: "#dc2626" }}>
-      {error}
+  if (txQuery.isError) return (
+    <div
+      className="mx-5 px-4 py-3 rounded-xl text-sm"
+      style={{ background: "rgba(220,38,38,0.08)", color: "#dc2626" }}
+    >
+      {(txQuery.error as Error).message}
     </div>
   );
 
-  if (items.length === 0) return (
-    <EmptyState label="Transaksi pembelian toko Anda yang berhasil akan muncul di sini" />
+  if (!tokoId) return (
+    <EmptyState label="Tambahkan toko Anda untuk melihat riwayat pembelian" />
   );
+
+  // Build a quick id → display-name map
+  const userMap = new Map(
+    (usersQuery.data ?? []).map((u) => [u.id, u.name ?? u.email])
+  );
+
+  const accepted = (txQuery.data ?? [])
+    .filter((t) => t.status === "accepted")
+    .slice()
+    .reverse(); // newest first
+
+  if (accepted.length === 0)
+    return <EmptyState label="Transaksi pembelian toko Anda yang berhasil akan muncul di sini" />;
 
   return (
     <div className="space-y-3 px-5 pb-5">
-      {items.map(({ tx, sellerLabel }) => (
-        <div
+      {accepted.map((tx) => (
+        <PembelianRow
           key={tx.id}
-          className="rounded-2xl p-4"
-          style={{
-            background: "#fff",
-            border: "1px solid rgba(111,207,151,0.25)",
-            boxShadow: "0 1px 6px rgba(31,111,95,0.06)",
-          }}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div
-                className="flex items-center justify-center w-8 h-8 rounded-xl shrink-0"
-                style={{ background: "#e8f5ef" }}
-              >
-                <ShoppingCart className="size-4" style={{ color: "#2FA084" }} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: "#1F6F5F" }}>
-                  {sellerLabel}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: "#85b5a5" }}>
-                  {formatDate(tx.created_at)}
-                </p>
-              </div>
-            </div>
-            <span
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-              style={{ background: "#dff0e8", color: "#1F6F5F" }}
-            >
-              Diterima
-            </span>
-          </div>
-          <DemandList items={tx.demand} />
-        </div>
+          tx={tx}
+          sellerLabel={userMap.get(tx.seller) ?? `Pengguna ${tx.seller.slice(0, 8)}…`}
+        />
       ))}
     </div>
   );
@@ -329,7 +285,8 @@ export default function TransactionHistoryDialog({
             Riwayat Transaksi
           </DialogTitle>
           <DialogDescription>
-            Hanya transaksi dengan status <strong>diterima</strong> yang ditampilkan.
+            Hanya transaksi dengan status{" "}
+            <strong>diterima</strong> yang ditampilkan.
           </DialogDescription>
         </DialogHeader>
 
@@ -363,12 +320,12 @@ export default function TransactionHistoryDialog({
           ))}
         </div>
 
-        {/* Tab content — scrollable */}
+        {/* Tab content */}
         <div className="overflow-y-auto max-h-[60dvh]">
           {tab === "penjualan" ? (
-            <PenjualanTab key={open ? "penjualan-open" : "penjualan"} />
+            <PenjualanTab enabled={open} />
           ) : (
-            <PembelianTab key={open ? "pembelian-open" : "pembelian"} />
+            <PembelianTab enabled={open} />
           )}
         </div>
       </DialogContent>

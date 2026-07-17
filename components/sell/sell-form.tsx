@@ -7,16 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EMPTY_DEMAND, type Demand, type DemandItem } from "@/lib/toko/types";
-import { TransaksiInput } from "@/lib/transaksi/types";
+
+// Local payload — the form only knows about demand; buyer is injected by the dialog.
+export type SellFormPayload = { demand: Demand };
 
 export type SellFormProps = {
   /** Initial values (for edit / detail mode). */
-  initial?: TransaksiInput;
+  initial?: SellFormPayload;
   commodityOptions: DemandItem[];
   submitLabel?: string;
   submitting?: boolean;
   errorMessage?: string | null;
-  onSubmit: (input: TransaksiInput) => void;
+  onSubmit: (input: SellFormPayload) => void;
 };
 
 function normalizeDemand(input?: Demand): Demand {
@@ -75,9 +77,7 @@ export default function SellForm({
 
   const handleSubmit = useCallback(() => {
     if (demand.length === 0) return;
-    const input: TransaksiInput = {
-      demand,
-    };
+    const input: SellFormPayload = { demand };
     onSubmit(input);
   }, [demand, onSubmit]);
 
