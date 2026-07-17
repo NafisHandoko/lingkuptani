@@ -49,7 +49,7 @@ function DialogContent({
         {children}
         <DialogPrimitive.Close
           className="absolute right-3 top-3 z-10 rounded-full p-1.5 text-muted-foreground opacity-80 transition hover:bg-muted hover:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-          aria-label="Close"
+          aria-label="Tutup"
         >
           <X className="size-4" />
         </DialogPrimitive.Close>

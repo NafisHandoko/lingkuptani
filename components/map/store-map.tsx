@@ -1,7 +1,14 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  Circle,
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import type { Marker as LeafletMarker } from "leaflet";
 import L from "leaflet";
 import {
@@ -47,6 +54,58 @@ const userIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
+// Reads a CSS variable (design token) from globals.css, e.g. cssVar("--chart-1").
+// Needed because Leaflet draws pins/circles as raw SVG where Tailwind classes
+// like `text-primary` don't apply — so we grab the hex value directly.
+// `fallback` covers the server (no `window`), where the map never renders anyway.
+function cssVar(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return value || fallback;
+}
+
+// Colored store pin icons (cached per color).
+const pinCache: Record<string, L.DivIcon> = {};
+function pinIcon(color: string) {
+  if (!pinCache[color]) {
+    pinCache[color] = L.divIcon({
+      className: "",
+      html: `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="1.5"><path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.6" fill="#ffffff" stroke="none"/></svg>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 29],
+      popupAnchor: [0, -26],
+    });
+  }
+  return pinCache[color];
+}
+
+// Great-circle distance between two lat/lng points, in meters (Haversine).
+function haversineMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) {
+  const R = 6_371_000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function formatDistance(m: number) {
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
+// Radius presets (meters) for the nearest-radius control.
+const RADIUS_OPTIONS = [1000, 2000, 3000, 5000];
+const formatRadius = (m: number) => (m < 1000 ? `${m} m` : `${m / 1000} km`);
+
 /** Helper to control the map imperatively from outside the react-leaflet tree. */
 function MapController({ onReady }: { onReady: (map: L.Map) => void }) {
   const map = useMap();
@@ -65,15 +124,53 @@ export default function StoreMap() {
   const markerRefs = useRef<Record<number, LeafletMarker | null>>({});
 
   const { data, isLoading } = useTokoList();
-  const stores: Toko[] = data ?? [];
+  const stores: Toko[] = useMemo(() => data ?? [], [data]);
 
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [radiusM, setRadiusM] = useState(1000);
+
+  // Palette pulled from globals.css design tokens (single source of truth).
+  const palette = useMemo(
+    () => ({
+      base: cssVar("--chart-1", "#6FCF97"), // circle + active chip background
+      accent: cssVar("--chart-2", "#2FA084"), // in-radius pin + distance text
+      dark: cssVar("--chart-3", "#1F6F5F"), // active chip text (readable on green)
+    }),
+    [],
+  );
+  // Store pin colors: in-radius uses the palette; out/default are deliberate
+  // neutral & blue states that aren't part of the brand palette.
+  const storeColor = useMemo(
+    () => ({ in: palette.accent, out: "#64748b", default: "#2563eb" }),
+    [palette],
+  );
+
+  // Attach distance-from-user (meters) & in-radius flag to each store.
+  const storesWithDistance = useMemo(() => {
+    return stores.map((store) => {
+      const distance = userLocation
+        ? haversineMeters(
+          userLocation.lat,
+          userLocation.lng,
+          Number(store.latitude),
+          Number(store.longitude),
+        )
+        : null;
+      return {
+        store,
+        distance,
+        inRadius: distance != null && distance <= radiusM,
+      };
+    });
+  }, [stores, userLocation, radiusM]);
+
+  const inRadiusCount = storesWithDistance.filter((s) => s.inRadius).length;
 
   const handleLocate = useCallback(() => {
     if (!("geolocation" in navigator)) {
-      setError("This device does not support GPS / geolocation.");
+      setError("Perangkat ini tidak mendukung GPS / geolokasi.");
       return;
     }
     setError(null);
@@ -93,7 +190,7 @@ export default function StoreMap() {
           setUserLocation({
             lat,
             lng,
-            address: "Address could not be loaded.",
+            address: "Alamat tidak dapat dimuat.",
           });
           console.error(e);
         } finally {
@@ -104,8 +201,8 @@ export default function StoreMap() {
         setLocating(false);
         setError(
           err.code === err.PERMISSION_DENIED
-            ? "Location permission denied. Enable GPS and allow location access."
-            : "Failed to get your location. Please try again.",
+            ? "Izin lokasi ditolak. Aktifkan GPS lalu izinkan akses lokasi."
+            : "Gagal mendapatkan lokasi. Coba lagi.",
         );
       },
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
@@ -136,10 +233,31 @@ export default function StoreMap() {
         />
         <TileLayer url={GEOAPIFY_TILE_URL} attribution={GEOAPIFY_ATTRIBUTION} />
 
-        {stores.map((store) => (
+        {/* Nearest-radius circle around the user (green). */}
+        {userLocation && (
+          <Circle
+            center={[userLocation.lat, userLocation.lng]}
+            radius={radiusM}
+            pathOptions={{
+              color: palette.base,
+              fillColor: palette.base,
+              fillOpacity: 0.15,
+              weight: 2,
+            }}
+          />
+        )}
+
+        {storesWithDistance.map(({ store, distance, inRadius }) => (
           <Marker
             key={store.id}
             position={[Number(store.latitude), Number(store.longitude)]}
+            icon={pinIcon(
+              !userLocation
+                ? storeColor.default
+                : inRadius
+                  ? storeColor.in
+                  : storeColor.out,
+            )}
             ref={(ref) => {
               markerRefs.current[store.id] = ref;
             }}
@@ -150,9 +268,18 @@ export default function StoreMap() {
                   {store.name}
                 </p>
                 <p className="text-xs text-foreground">{store.address}</p>
-                {(store.demand.length > 0 || store.contact) && (
+                {store.contact && (
                   <p className="text-xs text-foreground">
                     Kontak: {store.contact}
+                  </p>
+                )}
+                {distance != null && (
+                  <p
+                    className="text-xs font-medium"
+                    style={{ color: "#2FA084" }}
+                  >
+                    {formatDistance(distance)} dari lokasi Anda
+                    {inRadius ? " · dalam radius" : ""}
                   </p>
                 )}
                 <Card className="rounded-lg border bg-background/90 shadow-lg backdrop-blur">
@@ -167,25 +294,28 @@ export default function StoreMap() {
                             key={`${demand.commodity}-${index}`}
                             className="text-xs text-muted-foreground"
                           >
-                            {demand.commodity}: {demand.demand} kg @ Rp {demand.price} / kg
+                            {demand.commodity}: {demand.demand} kg @ Rp{" "}
+                            {demand.price} / kg
                           </p>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-muted-foreground">Kebutuhan terpenuhi</p>
+                      <p className="text-xs text-muted-foreground">
+                        Kebutuhan terpenuhi
+                      </p>
                     )}
-					<SellInfoDialog
-            tokoId={store.id}
-						trigger={
-						<Button
-							className="rounded-full shadow-lg w-full"
-							aria-label="Jual ke sini"
-						>
-							<Banknote className="size-4" />
-							<span className="hidden sm:inline">Jual ke sini</span>
-						</Button>
-						}
-					/>
+                    <SellInfoDialog
+                      tokoId={store.id}
+                      trigger={
+                        <Button
+                          className="rounded-full shadow-lg w-full"
+                          aria-label="Jual ke sini"
+                        >
+                          <Banknote className="size-4" />
+                          <span className="hidden sm:inline">Jual ke sini</span>
+                        </Button>
+                      }
+                    />
                   </CardContent>
                 </Card>
               </div>
@@ -201,7 +331,7 @@ export default function StoreMap() {
             <Popup>
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-foreground">
-                  Your Location
+                  Lokasi Anda
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
@@ -219,15 +349,17 @@ export default function StoreMap() {
 
       {/* Header */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-1000 flex items-start justify-between gap-2 p-4">
-        <div className="pointer-events-auto rounded-2xl px-4 py-3 shadow-lg backdrop-blur" style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(111,207,151,0.3)' }}>
-          <h1 className="flex items-center gap-2 text-base font-semibold" style={{ color: '#1F6F5F' }}>
-            <MapPin className="size-4" style={{ color: '#6FCF97' }} />
+        <div className="pointer-events-auto rounded-2xl bg-background/90 px-4 py-3 shadow-lg backdrop-blur">
+          <h1 className="flex items-center gap-2 text-base font-semibold">
+            <MapPin className="size-4 text-primary" />
             Toko Terdekat
           </h1>
-          <p className="text-xs" style={{ color: '#5a7a6e' }}>
+          <p className="text-xs text-muted-foreground">
             {isLoading
               ? "Memuat toko…"
-              : `${stores.length} toko ditemukan · LingkupTani`}
+              : userLocation
+                ? `${inRadiusCount} toko dalam radius ${formatRadius(radiusM)} · LingkupTani`
+                : `${stores.length} toko ditemukan · LingkupTani`}
           </p>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
@@ -235,14 +367,14 @@ export default function StoreMap() {
             trigger={
               <Button
                 className="rounded-full shadow-lg"
-                aria-label="Manage my store info"
+                aria-label="Kelola info toko saya"
               >
                 <StoreIcon className="size-4" />
-                <span className="hidden sm:inline">My Store</span>
+                <span className="hidden sm:inline">Toko Saya</span>
               </Button>
             }
           />
-		  <ConfirmationDialog
+          <ConfirmationDialog
             trigger={
               <Button
                 className="rounded-full shadow-lg"
@@ -253,7 +385,7 @@ export default function StoreMap() {
               </Button>
             }
           />
-		  <TransactionHistoryDialog
+          <TransactionHistoryDialog
             trigger={
               <Button
                 className="rounded-full shadow-lg"
@@ -269,7 +401,7 @@ export default function StoreMap() {
               type="submit"
               variant="outline"
               size="icon"
-              aria-label="Log out"
+              aria-label="Keluar"
               className="cursor-pointer rounded-full bg-background/90 shadow-lg backdrop-blur"
             >
               <LogOut className="size-4" />
@@ -286,7 +418,7 @@ export default function StoreMap() {
             size="icon"
             onClick={handleLocate}
             disabled={locating}
-            aria-label="Find my location"
+            aria-label="Temukan lokasi saya"
             className="pointer-events-auto size-12 rounded-full shadow-lg"
           >
             {locating ? (
@@ -301,11 +433,10 @@ export default function StoreMap() {
         {(error || userLocation?.address) && (
           <div className="px-4">
             <div
-              className={`pointer-events-auto rounded-xl px-4 py-2 text-xs shadow-lg backdrop-blur ${
-                error
+              className={`pointer-events-auto rounded-xl px-4 py-2 text-xs shadow-lg backdrop-blur ${error
                   ? "bg-destructive/10 text-destructive"
                   : "bg-background/90 text-foreground"
-              }`}
+                }`}
             >
               {error ? (
                 error
@@ -313,7 +444,7 @@ export default function StoreMap() {
                 <span className="flex items-start gap-2">
                   <Navigation className="mt-0.5 size-3.5 shrink-0 text-blue-600" />
                   <span>
-                    <b>Your location:</b> {userLocation?.address}
+                    <b>Lokasi Anda:</b> {userLocation?.address}
                   </span>
                 </span>
               )}
@@ -321,29 +452,72 @@ export default function StoreMap() {
           </div>
         )}
 
-        {/* Store list (horizontal scroll, mobile-first) */}
-        {stores.length > 0 && (
-          <div className="pointer-events-auto flex gap-3 overflow-x-auto px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
-            {stores.map((store) => (
-              <button
-                key={store.id}
-                onClick={() => focusStore(store)}
-                className="w-60 shrink-0 rounded-2xl p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px hover:-translate-y-0.5 duration-150"
-                style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(111,207,151,0.25)' }}
-              >
-                <p className="truncate text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
-                {store.demand.length > 0 && (
-                  <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
-                    {store.demand.length} demands
-                  </p>
-                )}
-                <p className="mt-1 line-clamp-2 text-xs" style={{ color: '#5a7a6e' }}>
-                  {store.address}
-                </p>
-              </button>
-            ))}
+        {/* Nearest-radius control (preset chips) — shown after locating. */}
+        {userLocation && (
+          <div className="px-4">
+            <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-background/90 px-2 py-1.5 shadow-lg backdrop-blur">
+              <span className="pl-1.5 text-xs font-medium text-muted-foreground">
+                Radius
+              </span>
+              {RADIUS_OPTIONS.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setRadiusM(m)}
+                  className="rounded-full px-2.5 py-1 text-xs font-medium transition hover:bg-muted"
+                  style={
+                    radiusM === m
+                      ? {
+                        backgroundColor: palette.base,
+                        color: palette.dark,
+                      }
+                      : undefined
+                  }
+                >
+                  {formatRadius(m)}
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Store list (horizontal scroll, mobile-first) */}
+        {(() => {
+          // When user location is active → show only in-radius stores.
+          // When no location yet → show all stores.
+          const visibleStores = userLocation
+            ? storesWithDistance.filter((s) => s.inRadius)
+            : storesWithDistance;
+
+          if (visibleStores.length === 0) return null;
+
+          return (
+            <div className="pointer-events-auto flex gap-3 overflow-x-auto px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
+              {visibleStores.map(({ store, distance }) => (
+                <button
+                  key={store.id}
+                  onClick={() => focusStore(store)}
+                  className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px hover:-translate-y-0.5 duration-150"
+                  style={{ border: '1px solid rgba(111,207,151,0.25)' }}
+                >
+                  <p className="truncate text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
+                  {store.price && (
+                    <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
+                      Rp {store.price}
+                    </p>
+                  )}
+                  {distance != null && (
+                    <p className="mt-0.5 text-xs" style={{ color: '#5a7a6e' }}>
+                      {formatDistance(distance)} dari lokasi Anda
+                    </p>
+                  )}
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                    {store.address}
+                  </p>
+                </button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
