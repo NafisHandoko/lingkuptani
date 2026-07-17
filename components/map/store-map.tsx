@@ -152,11 +152,11 @@ export default function StoreMap() {
     return stores.map((store) => {
       const distance = userLocation
         ? haversineMeters(
-            userLocation.lat,
-            userLocation.lng,
-            Number(store.latitude),
-            Number(store.longitude),
-          )
+          userLocation.lat,
+          userLocation.lng,
+          Number(store.latitude),
+          Number(store.longitude),
+        )
         : null;
       return {
         store,
@@ -357,7 +357,9 @@ export default function StoreMap() {
           <p className="text-xs text-muted-foreground">
             {isLoading
               ? "Memuat toko…"
-              : `${stores.length} toko ditemukan · Lingkup Tani`}
+              : userLocation
+                ? `${inRadiusCount} toko dalam radius ${formatRadius(radiusM)} · LingkupTani`
+                : `${stores.length} toko ditemukan · LingkupTani`}
           </p>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
@@ -372,7 +374,7 @@ export default function StoreMap() {
               </Button>
             }
           />
-		  <ConfirmationDialog
+          <ConfirmationDialog
             trigger={
               <Button
                 className="rounded-full shadow-lg"
@@ -383,7 +385,7 @@ export default function StoreMap() {
               </Button>
             }
           />
-		  <TransactionHistoryDialog
+          <TransactionHistoryDialog
             trigger={
               <Button
                 className="rounded-full shadow-lg"
@@ -431,11 +433,10 @@ export default function StoreMap() {
         {(error || userLocation?.address) && (
           <div className="px-4">
             <div
-              className={`pointer-events-auto rounded-xl px-4 py-2 text-xs shadow-lg backdrop-blur ${
-                error
+              className={`pointer-events-auto rounded-xl px-4 py-2 text-xs shadow-lg backdrop-blur ${error
                   ? "bg-destructive/10 text-destructive"
                   : "bg-background/90 text-foreground"
-              }`}
+                }`}
             >
               {error ? (
                 error
@@ -466,9 +467,9 @@ export default function StoreMap() {
                   style={
                     radiusM === m
                       ? {
-                          backgroundColor: palette.base,
-                          color: palette.dark,
-                        }
+                        backgroundColor: palette.base,
+                        color: palette.dark,
+                      }
                       : undefined
                   }
                 >
@@ -480,33 +481,43 @@ export default function StoreMap() {
         )}
 
         {/* Store list (horizontal scroll, mobile-first) */}
-        {stores.length > 0 && (
-          <div className="pointer-events-auto flex gap-3 overflow-x-auto px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
-            {storesWithDistance.map(({ store, distance, inRadius }) => (
-              <button
-                key={store.id}
-                onClick={() => focusStore(store)}
-                className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px"
-              >
-                <p className="truncate text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
-                {store.price && (
-                  <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
-                    Rp {store.price}
+        {(() => {
+          // When user location is active → show only in-radius stores.
+          // When no location yet → show all stores.
+          const visibleStores = userLocation
+            ? storesWithDistance.filter((s) => s.inRadius)
+            : storesWithDistance;
+
+          if (visibleStores.length === 0) return null;
+
+          return (
+            <div className="pointer-events-auto flex gap-3 overflow-x-auto px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
+              {visibleStores.map(({ store, distance }) => (
+                <button
+                  key={store.id}
+                  onClick={() => focusStore(store)}
+                  className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px hover:-translate-y-0.5 duration-150"
+                  style={{ border: '1px solid rgba(111,207,151,0.25)' }}
+                >
+                  <p className="truncate text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
+                  {store.price && (
+                    <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
+                      Rp {store.price}
+                    </p>
+                  )}
+                  {distance != null && (
+                    <p className="mt-0.5 text-xs" style={{ color: '#5a7a6e' }}>
+                      {formatDistance(distance)} dari lokasi Anda
+                    </p>
+                  )}
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                    {store.address}
                   </p>
-                )}
-                {distance != null && (
-                  <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
-                    {formatDistance(distance)} dari lokasi Anda
-                    {inRadius ? " · dalam radius" : ""}
-                  </p>
-                )}
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                  {store.address}
-                </p>
-              </button>
-            ))}
-          </div>
-        )}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
