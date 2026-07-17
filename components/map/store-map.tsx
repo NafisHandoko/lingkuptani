@@ -18,6 +18,9 @@ import {
   MapPin,
   Navigation,
   Store as StoreIcon,
+  Bell,
+  History,
+  Banknote
 } from "lucide-react";
 
 import "leaflet/dist/leaflet.css";
@@ -35,6 +38,10 @@ import {
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from "@/lib/dummy-stores";
 import { useTokoList } from "@/lib/toko/hooks";
 import type { Toko } from "@/lib/toko/types";
+import ConfirmationDialog from "../confirmation/confirmation-dialog";
+import { Card, CardContent, CardTitle } from "../ui/card";
+import TransactionHistoryDialog from "../history/transaction-history";
+import SellInfoDialog from "../sell/sell-info-dialog";
 
 // User location marker icon
 const userIcon = L.divIcon({
@@ -261,22 +268,56 @@ export default function StoreMap() {
                   {store.name}
                 </p>
                 <p className="text-xs text-foreground">{store.address}</p>
-                {(store.price || store.contact) && (
-                  <p className="text-xs text-muted-foreground">
-                    {store.price ? `Rp ${store.price}` : ""}
-                    {store.price && store.contact ? " · " : ""}
-                    {store.contact}
+                {store.contact && (
+                  <p className="text-xs text-foreground">
+                    Kontak: {store.contact}
                   </p>
                 )}
                 {distance != null && (
                   <p
                     className="text-xs font-medium"
-                    style={{ color: palette.accent }}
+                    style={{ color: "#2FA084" }}
                   >
                     {formatDistance(distance)} dari lokasi Anda
                     {inRadius ? " · dalam radius" : ""}
                   </p>
                 )}
+                <Card className="rounded-lg border bg-background/90 shadow-lg backdrop-blur">
+                  <CardContent className="space-y-2 p-3 py-0">
+                    <CardTitle className="text-sm font-semibold text-foreground">
+                      Kebutuhan
+                    </CardTitle>
+                    {store.demand.length > 0 ? (
+                      <div className="space-y-1">
+                        {store.demand.map((demand, index) => (
+                          <p
+                            key={`${demand.commodity}-${index}`}
+                            className="text-xs text-muted-foreground"
+                          >
+                            {demand.commodity}: {demand.demand} kg @ Rp{" "}
+                            {demand.price} / kg
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Kebutuhan terpenuhi
+                      </p>
+                    )}
+                    <SellInfoDialog
+                      tokoId={store.id}
+                      trigger={
+                        <Button
+                          className="rounded-full shadow-lg w-full"
+                          aria-label="Jual ke sini"
+                        >
+                          <Banknote className="size-4" />
+                          <span className="hidden sm:inline">Jual ke sini</span>
+                        </Button>
+                      }
+                    />
+                  </CardContent>
+                </Card>
               </div>
             </Popup>
           </Marker>
@@ -328,6 +369,28 @@ export default function StoreMap() {
               >
                 <StoreIcon className="size-4" />
                 <span className="hidden sm:inline">Toko Saya</span>
+              </Button>
+            }
+          />
+		  <ConfirmationDialog
+            trigger={
+              <Button
+                className="rounded-full shadow-lg"
+                aria-label="Confirm transaction"
+              >
+                <Bell className="size-4" />
+                {/* <span className="hidden sm:inline">Confirmations</span> */}
+              </Button>
+            }
+          />
+		  <TransactionHistoryDialog
+            trigger={
+              <Button
+                className="rounded-full shadow-lg"
+                aria-label="View transaction history"
+              >
+                <History className="size-4" />
+                {/* <span className="hidden sm:inline">Confirmations</span> */}
               </Button>
             }
           />
@@ -425,10 +488,16 @@ export default function StoreMap() {
                 onClick={() => focusStore(store)}
                 className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px"
               >
-                <p className="truncate text-sm font-semibold">{store.name}</p>
+                <p className="truncate text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
                 {store.price && (
-                  <p className="mt-0.5 text-xs font-medium text-secondary">
+                  <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
                     Rp {store.price}
+                  </p>
+                )}
+                {distance != null && (
+                  <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
+                    {formatDistance(distance)} dari lokasi Anda
+                    {inRadius ? " · dalam radius" : ""}
                   </p>
                 )}
                 <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
