@@ -21,7 +21,6 @@ export async function GET(
       .from('toko')
       .select('*')
       .eq('id', id)
-      .eq('user_id', session.user.id)
       .single();
     
     if (error) {
@@ -68,7 +67,6 @@ export async function PATCH(
       .from('toko')
       .update({ name, longitude, latitude, demand, price, contact, address })
       .eq('id', id)
-      .eq('user_id', session.user.id)
       .select()
       .single();
     
