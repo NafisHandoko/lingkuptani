@@ -52,7 +52,7 @@ export async function PATCH(
     const resolvedParams = await Promise.resolve(params);
     const id = resolvedParams.id;
     const body = await request.json();
-    const { verified } = body;
+    const { status } = body;
     
     const supabase = await createSupabaseServer();
     
@@ -65,7 +65,7 @@ export async function PATCH(
     
     const { data, error } = await supabase
       .from('transaction')
-      .update({ verified })
+      .update({ status })
       .eq('id', id)
       .select()
       .single();
