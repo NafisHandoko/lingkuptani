@@ -15,7 +15,7 @@ services:
       - "traefik.enable=true"
 
       # Router domain Next.js
-      - "traefik.http.routers.lingkuptani.rule=Host(`lingkuptani.nafishandoko.my.id`)"
+      - "traefik.http.routers.lingkuptani.rule=Host(`lingkuptani.my.id`)"
       - "traefik.http.routers.lingkuptani.entrypoints=websecure"
       - "traefik.http.routers.lingkuptani.tls.certresolver=letsencrypt"
 
