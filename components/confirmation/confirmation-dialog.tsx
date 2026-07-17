@@ -18,7 +18,6 @@ import type { Transaksi, TransaksiInput } from "@/lib/transaksi/types";
 // Transaksi (api response) - TransaksiInput (form payload).
 function toInput(t: Transaksi): TransaksiInput {
   return {
-    verified: t.verified,
     demand: t.demand,
   };
 }

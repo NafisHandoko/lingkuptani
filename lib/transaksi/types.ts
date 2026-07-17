@@ -11,14 +11,12 @@ export type Transaksi = {
   toko_id: number;
   user_id: number;
   demand: Demand;
-  verified: boolean;
   created_at: string;
 };
 
 // Payload for POST (create) & PATCH (update) store
 export type TransaksiInput = {
   demand: Demand;
-  verified: boolean;
   toko_id?: number;
 };
 

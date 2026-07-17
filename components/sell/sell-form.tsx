@@ -77,10 +77,9 @@ export default function SellForm({
     if (demand.length === 0) return;
     const input: TransaksiInput = {
       demand,
-      verified: initial?.verified ?? false,
     };
     onSubmit(input);
-  }, [demand, onSubmit, initial?.verified]);
+  }, [demand, onSubmit]);
 
   return (
     <div className="flex flex-col min-h-0 flex-1">

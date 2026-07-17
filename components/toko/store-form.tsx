@@ -24,6 +24,8 @@ const LocationPickerMap = dynamic(
 
 type LatLng = { lat: number; lng: number };
 
+type DemandRow = DemandItem & { id: string };
+
 export type StoreFormProps = {
   /** Initial values (for edit / detail mode). */
   initial?: TokoInput;
@@ -38,11 +40,26 @@ function normalizeDemand(input?: Demand): Demand {
   return EMPTY_DEMAND;
 }
 
+function createDemandRow(item: DemandItem): DemandRow {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    ...item,
+  };
+}
+
+function normalizeDemandRows(input?: Demand): DemandRow[] {
+  return normalizeDemand(input).map((item) => createDemandRow(item));
+}
+
+function toDemandInput(rows: DemandRow[]): Demand {
+  return rows.map(({ id, ...item }) => item);
+}
+
 function updateDemandItem(
-  items: Demand,
+  items: DemandRow[],
   index: number,
   patch: Partial<DemandItem>,
-): Demand {
+): DemandRow[] {
   return items.map((item, currentIndex) =>
     currentIndex === index ? { ...item, ...patch } : item,
   );
@@ -57,7 +74,7 @@ export default function StoreForm({
 }: StoreFormProps) {
   const [name, setName] = useState(initial?.name ?? "");
   const [contact, setContact] = useState(initial?.contact ?? "");
-  const [demand, setDemand] = useState<Demand>(normalizeDemand(initial?.demand));
+  const [demand, setDemand] = useState<DemandRow[]>(normalizeDemandRows(initial?.demand));
 
   const [coords, setCoords] = useState<LatLng | null>(
     initial?.latitude && initial?.longitude
@@ -123,7 +140,7 @@ export default function StoreForm({
       address: address.trim(),
       price: String(firstPrice),
       contact: contact.trim(),
-      demand,
+      demand: toDemandInput(demand),
     };
     onSubmit(input);
   }, [name, coords, address, contact, demand, onSubmit]);
@@ -238,10 +255,7 @@ export default function StoreForm({
               variant="outline"
               size="sm"
               onClick={() =>
-                setDemand((current) => [
-                  ...current,
-                  { commodity: "", price: 0, demand: 0 },
-                ])
+                setDemand((current) => [...current, createDemandRow({ commodity: "", price: 0, demand: 0 })])
               }
               className="h-8"
             >
@@ -252,7 +266,7 @@ export default function StoreForm({
 
           <div className="space-y-3">
             {demand.map((item, index) => (
-              <div key={`${item.commodity || "commodity"}-${index}`} className="space-y-3 rounded-lg border p-3">
+              <div key={item.id} className="space-y-3 rounded-lg border p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-muted-foreground">
                     Komoditas {index + 1}

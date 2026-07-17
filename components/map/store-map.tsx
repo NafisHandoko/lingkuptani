@@ -20,7 +20,8 @@ import {
   Store as StoreIcon,
   Bell,
   History,
-  Banknote
+  Banknote,
+  PhoneCall
 } from "lucide-react";
 
 import "leaflet/dist/leaflet.css";
@@ -269,9 +270,13 @@ export default function StoreMap() {
                 </p>
                 <p className="text-xs text-foreground">{store.address}</p>
                 {store.contact && (
-                  <p className="text-xs text-foreground">
-                    Kontak: {store.contact}
-                  </p>
+                  <div className="flex items-center gap-1">
+				  <p className="text-xs text-foreground">
+								Kontak: {store.contact}
+							</p><Button><a href={`https://wa.me/${store.contact}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.25rem", textDecoration: "none", color: "inherit" }}>
+								<PhoneCall className="size-4" />WA
+							</a></Button>
+							</div>
                 )}
                 {distance != null && (
                   <p
@@ -502,9 +507,9 @@ export default function StoreMap() {
                   style={{ border: '1px solid rgba(111,207,151,0.25)' }}
                 >
                   <p className="truncate text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
-                  {store.price && (
+                  {store.demand.length > 0 && (
                     <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
-                      Rp {store.price}
+                      {store.demand.length} komoditas dibutuhkan
                     </p>
                   )}
                   {distance != null && (
