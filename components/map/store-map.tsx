@@ -295,14 +295,12 @@ export default function StoreMap() {
         <div className="pointer-events-auto rounded-2xl bg-background/90 px-4 py-3 shadow-lg backdrop-blur">
           <h1 className="flex items-center gap-2 text-base font-semibold">
             <MapPin className="size-4 text-primary" />
-            Toko Sekitar
+            Nearby Stores
           </h1>
           <p className="text-xs text-muted-foreground">
             {isLoading
-              ? "Memuat toko…"
-              : userLocation
-                ? `${inRadiusCount} dari ${stores.length} toko dalam ${formatRadius(radiusM)}`
-                : `${stores.length} toko ditemukan · Lingkup Tani`}
+              ? "Loading stores…"
+              : `${stores.length} stores found · Lingkup Tani`}
           </p>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
@@ -410,31 +408,10 @@ export default function StoreMap() {
                 key={store.id}
                 onClick={() => focusStore(store)}
                 className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px"
-                style={
-                  inRadius
-                    ? {
-                        boxShadow: `0 0 0 2px ${RADIUS_PALETTE.base}`,
-                      }
-                    : undefined
-                }
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-semibold">{store.name}</p>
-                  {distance != null && (
-                    <span
-                      className="shrink-0 text-xs font-medium"
-                      style={{
-                        color: inRadius
-                          ? RADIUS_PALETTE.accent
-                          : "var(--muted-foreground)",
-                      }}
-                    >
-                      {formatDistance(distance)}
-                    </span>
-                  )}
-                </div>
+                <p className="truncate text-sm font-semibold">{store.name}</p>
                 {store.price && (
-                  <p className="mt-0.5 text-xs text-primary">
+                  <p className="mt-0.5 text-xs font-medium text-secondary">
                     Rp {store.price}
                   </p>
                 )}

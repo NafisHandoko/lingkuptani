@@ -16,7 +16,7 @@ const LocationPickerMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-full w-full items-center justify-center bg-muted">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <Loader2 className="size-6 animate-spin text-primary" />
       </div>
     ),
   },
@@ -134,7 +134,7 @@ export default function StoreForm({
       <div className="relative mx-5 h-48 shrink-0 overflow-hidden rounded-xl border">
         <LocationPickerMap value={coords} onChange={applyLocation} />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] p-2">
-          <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium shadow backdrop-blur">
+          <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-background/90 px-2.5 py-1 text-[11px] font-medium text-accent shadow backdrop-blur">
             <MapPin className="size-3 text-primary" />
             Ketuk peta atau geser pin
           </span>
@@ -215,7 +215,7 @@ export default function StoreForm({
             placeholder="Alamat terisi otomatis dari titik lokasi, bisa diedit"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+            className="flex w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           />
         </div>
 
