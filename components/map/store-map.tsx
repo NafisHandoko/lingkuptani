@@ -273,7 +273,7 @@ export default function StoreMap() {
                   <div className="flex items-center gap-1">
 				  <p className="text-xs text-foreground">
 								Kontak: {store.contact}
-							</p><Button><a href={`https://wa.me/${store.contact}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.25rem", textDecoration: "none", color: "inherit" }}>
+							</p><Button><a href={`https://wa.me/62${store.contact.substring(1)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "0.25rem", textDecoration: "none", color: "inherit" }}>
 								<PhoneCall className="size-4" />WA
 							</a></Button>
 							</div>
