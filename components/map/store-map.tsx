@@ -317,8 +317,7 @@ export default function StoreMap() {
 								className="rounded-full shadow-lg w-full"
 								aria-label="Jual ke sini"
 							>
-								<Banknote className="size-4" />
-								<span className="hidden sm:inline">Jual ke sini</span>
+								<span>Jual ke sini</span>
 							</Button>
 							}
 						/>
