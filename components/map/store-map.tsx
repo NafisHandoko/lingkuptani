@@ -295,12 +295,12 @@ export default function StoreMap() {
         <div className="pointer-events-auto rounded-2xl bg-background/90 px-4 py-3 shadow-lg backdrop-blur">
           <h1 className="flex items-center gap-2 text-base font-semibold">
             <MapPin className="size-4 text-primary" />
-            Nearby Stores
+            Toko Terdekat
           </h1>
           <p className="text-xs text-muted-foreground">
             {isLoading
-              ? "Loading stores…"
-              : `${stores.length} stores found · Lingkup Tani`}
+              ? "Memuat toko…"
+              : `${stores.length} toko ditemukan · Lingkup Tani`}
           </p>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
