@@ -50,7 +50,7 @@ function updateDemandItem(
 
 export default function StoreForm({
   initial,
-  submitLabel = "Save Store",
+  submitLabel = "Simpan Toko",
   submitting = false,
   errorMessage = null,
   onSubmit,
@@ -79,7 +79,7 @@ export default function StoreForm({
       setAddress(result.formatted);
     } catch (e) {
       console.error(e);
-      setGeoError("Failed to fetch address. Enter it manually or try again.");
+      setGeoError("Gagal mengambil alamat. Isi manual atau coba lagi.");
     } finally {
       setGeocoding(false);
     }
@@ -87,7 +87,7 @@ export default function StoreForm({
 
   const handleGPS = useCallback(() => {
     if (!("geolocation" in navigator)) {
-      setGeoError("This device does not support GPS / geolocation.");
+      setGeoError("Perangkat ini tidak mendukung GPS / geolokasi.");
       return;
     }
     setGeoError(null);
@@ -101,8 +101,8 @@ export default function StoreForm({
         setLocating(false);
         setGeoError(
           err.code === err.PERMISSION_DENIED
-            ? "Location permission denied. Enable GPS and allow location access."
-            : "Failed to get your location. Please try again.",
+            ? "Izin lokasi ditolak. Aktifkan GPS lalu izinkan akses lokasi."
+            : "Gagal mendapatkan lokasi. Coba lagi.",
         );
       },
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
@@ -136,17 +136,17 @@ export default function StoreForm({
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] p-2">
           <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium shadow backdrop-blur">
             <MapPin className="size-3 text-primary" />
-            Tap the map or drag the pin
+            Ketuk peta atau geser pin
           </span>
         </div>
       </div>
 
       <div className="space-y-4 overflow-y-auto p-5 pt-4">
         <div className="space-y-1.5">
-          <Label htmlFor="name">Store Name</Label>
+          <Label htmlFor="name">Nama Toko</Label>
           <Input
             id="name"
-            placeholder="e.g. Toko Tani Makmur"
+            placeholder="cth. Toko Tani Makmur"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -164,7 +164,7 @@ export default function StoreForm({
           ) : (
             <LocateFixed className="size-4" />
           )}
-          {locating ? "Detecting location…" : "Use My GPS Location"}
+          {locating ? "Mendeteksi lokasi…" : "Gunakan Lokasi GPS Saya"}
         </Button>
 
         <div className="grid grid-cols-2 gap-3">
@@ -202,17 +202,17 @@ export default function StoreForm({
 
         <div className="space-y-1.5">
           <Label htmlFor="address">
-            Address
+            Alamat
             {geocoding && (
               <span className="inline-flex items-center gap-1 text-xs font-normal text-muted-foreground">
-                <Loader2 className="size-3 animate-spin" /> loading…
+                <Loader2 className="size-3 animate-spin" /> memuat…
               </span>
             )}
           </Label>
           <textarea
             id="address"
             rows={2}
-            placeholder="Address is auto-filled from the location point, editable"
+            placeholder="Alamat terisi otomatis dari titik lokasi, bisa diedit"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
@@ -220,7 +220,7 @@ export default function StoreForm({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="contact">Contact</Label>
+          <Label htmlFor="contact">Kontak</Label>
           <Input
             id="contact"
             inputMode="tel"
@@ -232,7 +232,7 @@ export default function StoreForm({
 
         <div className="space-y-3 rounded-xl border p-4">
           <div className="flex items-center justify-between gap-3">
-            <Label>Demand</Label>
+            <Label>Permintaan</Label>
             <Button
               type="button"
               variant="outline"
@@ -246,7 +246,7 @@ export default function StoreForm({
               className="h-8"
             >
               <Plus className="size-4" />
-              Add commodity
+              Tambah komoditas
             </Button>
           </div>
 
@@ -255,7 +255,7 @@ export default function StoreForm({
               <div key={`${item.commodity || "commodity"}-${index}`} className="space-y-3 rounded-lg border p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-muted-foreground">
-                    Commodity {index + 1}
+                    Komoditas {index + 1}
                   </span>
                   {demand.length > 1 && (
                     <Button
@@ -272,7 +272,7 @@ export default function StoreForm({
 
                 <div className="space-y-1.5">
                   <Label htmlFor={`commodity-${index}`} className="text-xs text-muted-foreground">
-                    Commodity
+                    Komoditas
                   </Label>
                   <Input
                     id={`commodity-${index}`}
@@ -287,7 +287,7 @@ export default function StoreForm({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor={`price-${index}`} className="text-xs text-muted-foreground">
-                      Price (Rp)
+                      Harga (Rp)
                     </Label>
                     <Input
                       id={`price-${index}`}
@@ -303,7 +303,7 @@ export default function StoreForm({
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor={`demand-${index}`} className="text-xs text-muted-foreground">
-                      Demand
+                      Permintaan
                     </Label>
                     <Input
                       id={`demand-${index}`}
@@ -338,7 +338,7 @@ export default function StoreForm({
           className="h-11 w-full"
         >
           {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-          {submitting ? "Saving…" : submitLabel}
+          {submitting ? "Menyimpan…" : submitLabel}
         </Button>
       </div>
     </div>

@@ -30,7 +30,7 @@ export default function LoginPage() {
     const body = await res.json()
 
     if (!res.ok) {
-      setError(body.error ?? 'Failed to login, please try again.')
+      setError(body.error ?? 'Gagal masuk. Coba lagi.')
       setPending(false)
       return
     }
