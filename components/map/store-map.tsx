@@ -181,15 +181,15 @@ export default function StoreMap() {
 
       {/* Header */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-1000 flex items-start justify-between gap-2 p-4">
-        <div className="pointer-events-auto rounded-2xl bg-background/90 px-4 py-3 shadow-lg backdrop-blur">
-          <h1 className="flex items-center gap-2 text-base font-semibold">
-            <MapPin className="size-4 text-primary" />
-            Nearby Stores
+        <div className="pointer-events-auto rounded-2xl px-4 py-3 shadow-lg backdrop-blur" style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(111,207,151,0.3)' }}>
+          <h1 className="flex items-center gap-2 text-base font-semibold" style={{ color: '#1F6F5F' }}>
+            <MapPin className="size-4" style={{ color: '#6FCF97' }} />
+            Toko Terdekat
           </h1>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs" style={{ color: '#5a7a6e' }}>
             {isLoading
-              ? "Loading stores…"
-              : `${stores.length} stores found · Lingkup Tani`}
+              ? "Memuat toko…"
+              : `${stores.length} toko ditemukan · LingkupTani`}
           </p>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
@@ -268,15 +268,16 @@ export default function StoreMap() {
               <button
                 key={store.id}
                 onClick={() => focusStore(store)}
-                className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px"
+                className="w-60 shrink-0 rounded-2xl p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px hover:-translate-y-0.5 duration-150"
+                style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(111,207,151,0.25)' }}
               >
-                <p className="truncate text-sm font-semibold">{store.name}</p>
+                <p className="truncate text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
                 {store.price && (
-                  <p className="mt-0.5 text-xs text-primary">
+                  <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
                     Rp {store.price}
                   </p>
                 )}
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                <p className="mt-1 line-clamp-2 text-xs" style={{ color: '#5a7a6e' }}>
                   {store.address}
                 </p>
               </button>
