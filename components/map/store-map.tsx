@@ -263,7 +263,7 @@ export default function StoreMap() {
               markerRefs.current[store.id] = ref;
             }}
           >
-            <Popup>
+            <Popup maxWidth={280} minWidth={220}>
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-foreground">
                   {store.name}
@@ -355,51 +355,51 @@ export default function StoreMap() {
       </MapContainer>
 
       {/* Header */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-1000 flex items-start justify-between gap-2 p-4">
-        <div className="pointer-events-auto rounded-2xl bg-background/90 px-4 py-3 shadow-lg backdrop-blur">
-          <h1 className="flex items-center gap-2 text-base font-semibold">
-            <MapPin className="size-4 text-primary" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-1000 flex items-start justify-between gap-2 p-2 sm:p-4">
+        <div className="pointer-events-auto rounded-xl sm:rounded-2xl bg-background/90 px-3 py-2 sm:px-4 sm:py-3 shadow-lg backdrop-blur">
+          <h1 className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold">
+            <MapPin className="size-3 sm:size-4 text-primary shrink-0" />
             Toko Terdekat
           </h1>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
             {isLoading
               ? "Memuat toko…"
               : userLocation
-                ? `${inRadiusCount} toko dalam radius ${formatRadius(radiusM)} · LingkupTani`
-                : `${stores.length} toko ditemukan · LingkupTani`}
+                ? `${inRadiusCount} toko · radius ${formatRadius(radiusM)}`
+                : `${stores.length} toko ditemukan`}
           </p>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
           <StoreInfoDialog
             trigger={
               <Button
-                className="rounded-full shadow-lg"
+                size="icon"
+                className="rounded-full shadow-lg size-8 sm:size-8"
                 aria-label="Kelola info toko saya"
               >
                 <StoreIcon className="size-4" />
-                <span className="hidden sm:inline">Toko Saya</span>
               </Button>
             }
           />
           <ConfirmationDialog
             trigger={
               <Button
-                className="rounded-full shadow-lg"
-                aria-label="Confirm transaction"
+                size="icon"
+                className="rounded-full shadow-lg size-8 sm:size-8"
+                aria-label="Konfirmasi transaksi"
               >
                 <Bell className="size-4" />
-                {/* <span className="hidden sm:inline">Confirmations</span> */}
               </Button>
             }
           />
           <TransactionHistoryDialog
             trigger={
               <Button
-                className="rounded-full shadow-lg"
-                aria-label="View transaction history"
+                size="icon"
+                className="rounded-full shadow-lg size-8 sm:size-8"
+                aria-label="Riwayat transaksi"
               >
                 <History className="size-4" />
-                {/* <span className="hidden sm:inline">Confirmations</span> */}
               </Button>
             }
           />
@@ -409,7 +409,7 @@ export default function StoreMap() {
               variant="outline"
               size="icon"
               aria-label="Keluar"
-              className="cursor-pointer rounded-full bg-background/90 shadow-lg backdrop-blur"
+              className="cursor-pointer rounded-full bg-background/90 shadow-lg backdrop-blur size-8 sm:size-8"
             >
               <LogOut className="size-4" />
             </Button>
@@ -420,37 +420,37 @@ export default function StoreMap() {
       {/* Bottom overlay: GPS button + banner + store list, stacked vertically */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-1000 flex flex-col gap-3 pb-4">
         {/* Locate-me button */}
-        <div className="flex justify-end px-4">
+        <div className="flex justify-end px-3 sm:px-4">
           <Button
             size="icon"
             onClick={handleLocate}
             disabled={locating}
             aria-label="Temukan lokasi saya"
-            className="pointer-events-auto size-12 rounded-full shadow-lg"
+            className="pointer-events-auto size-10 sm:size-12 rounded-full shadow-lg"
           >
             {locating ? (
-              <Loader2 className="size-5 animate-spin" />
+              <Loader2 className="size-4 sm:size-5 animate-spin" />
             ) : (
-              <LocateFixed className="size-5" />
+              <LocateFixed className="size-4 sm:size-5" />
             )}
           </Button>
         </div>
 
         {/* Error / GPS address notification */}
         {(error || userLocation?.address) && (
-          <div className="px-4">
+          <div className="px-3 sm:px-4">
             <div
-              className={`pointer-events-auto rounded-xl px-4 py-2 text-xs shadow-lg backdrop-blur ${error
+              className={`pointer-events-auto rounded-xl px-3 py-2 text-[11px] sm:text-xs shadow-lg backdrop-blur ${error
                   ? "bg-destructive/10 text-destructive"
                   : "bg-background/90 text-foreground"
                 }`}
             >
               {error ? (
-                error
+                <span className="line-clamp-2">{error}</span>
               ) : (
                 <span className="flex items-start gap-2">
-                  <Navigation className="mt-0.5 size-3.5 shrink-0 text-blue-600" />
-                  <span>
+                  <Navigation className="mt-0.5 size-3 sm:size-3.5 shrink-0 text-blue-600" />
+                  <span className="line-clamp-2">
                     <b>Lokasi Anda:</b> {userLocation?.address}
                   </span>
                 </span>
@@ -461,16 +461,16 @@ export default function StoreMap() {
 
         {/* Nearest-radius control (preset chips) — shown after locating. */}
         {userLocation && (
-          <div className="px-4">
-            <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-background/90 px-2 py-1.5 shadow-lg backdrop-blur">
-              <span className="pl-1.5 text-xs font-medium text-muted-foreground">
+          <div className="px-3 sm:px-4">
+            <div className="pointer-events-auto inline-flex items-center gap-1 sm:gap-2 rounded-full bg-background/90 px-1.5 sm:px-2 py-1 sm:py-1.5 shadow-lg backdrop-blur">
+              <span className="pl-1 text-[10px] sm:text-xs font-medium text-muted-foreground">
                 Radius
               </span>
               {RADIUS_OPTIONS.map((m) => (
                 <button
                   key={m}
                   onClick={() => setRadiusM(m)}
-                  className="rounded-full px-2.5 py-1 text-xs font-medium transition hover:bg-muted"
+                  className="rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium transition hover:bg-muted"
                   style={
                     radiusM === m
                       ? {
@@ -498,26 +498,26 @@ export default function StoreMap() {
           if (visibleStores.length === 0) return null;
 
           return (
-            <div className="pointer-events-auto flex gap-3 overflow-x-auto px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
+            <div className="pointer-events-auto flex gap-2 sm:gap-3 overflow-x-auto px-3 sm:px-4 pt-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
               {visibleStores.map(({ store, distance }) => (
                 <button
                   key={store.id}
                   onClick={() => focusStore(store)}
-                  className="w-60 shrink-0 rounded-2xl bg-background/95 p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px hover:-translate-y-0.5 duration-150"
+                  className="w-44 sm:w-56 shrink-0 rounded-xl sm:rounded-2xl bg-background/95 p-2.5 sm:p-3 text-left shadow-lg backdrop-blur transition active:translate-y-px hover:-translate-y-0.5 duration-150"
                   style={{ border: '1px solid rgba(111,207,151,0.25)' }}
                 >
-                  <p className="truncate text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
+                  <p className="truncate text-xs sm:text-sm font-semibold" style={{ color: '#1F6F5F' }}>{store.name}</p>
                   {store.demand.length > 0 && (
-                    <p className="mt-0.5 text-xs font-medium" style={{ color: '#2FA084' }}>
+                    <p className="mt-0.5 text-[10px] sm:text-xs font-medium" style={{ color: '#2FA084' }}>
                       {store.demand.length} komoditas dibutuhkan
                     </p>
                   )}
                   {distance != null && (
-                    <p className="mt-0.5 text-xs" style={{ color: '#5a7a6e' }}>
+                    <p className="mt-0.5 text-[10px] sm:text-xs" style={{ color: '#5a7a6e' }}>
                       {formatDistance(distance)} dari lokasi Anda
                     </p>
                   )}
-                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                  <p className="mt-1 line-clamp-2 text-[10px] sm:text-xs text-muted-foreground">
                     {store.address}
                   </p>
                 </button>
