@@ -76,7 +76,7 @@ export default function LoginPage() {
 
           {/* Feature pills */}
           <div className="flex flex-wrap justify-center gap-3 mt-8">
-            {['🗺️ Peta Interaktif', '🌱 Toko Pertanian', '📍 Lokasi Real-time'].map((feat) => (
+            {['Peta Interaktif', 'Toko Pertanian', 'Lokasi Real-time'].map((feat) => (
               <span
                 key={feat}
                 className="px-4 py-2 rounded-full text-sm font-medium text-white/90"
