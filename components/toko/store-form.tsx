@@ -15,8 +15,8 @@ const LocationPickerMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full w-full items-center justify-center bg-muted">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div className="flex h-full w-full items-center justify-center" style={{ background: '#dff0e8' }}>
+        <Loader2 className="size-6 animate-spin" style={{ color: '#6FCF97' }} />
       </div>
     ),
   },
@@ -134,9 +134,9 @@ export default function StoreForm({
       <div className="relative mx-5 h-48 shrink-0 overflow-hidden rounded-xl border">
         <LocationPickerMap value={coords} onChange={applyLocation} />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] p-2">
-          <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium shadow backdrop-blur">
-            <MapPin className="size-3 text-primary" />
-            Tap the map or drag the pin
+          <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium shadow backdrop-blur" style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(111,207,151,0.3)', color: '#1F6F5F' }}>
+            <MapPin className="size-3" style={{ color: '#6FCF97' }} />
+            Tap peta atau seret pin
           </span>
         </div>
       </div>
@@ -212,10 +212,11 @@ export default function StoreForm({
           <textarea
             id="address"
             rows={2}
-            placeholder="Address is auto-filled from the location point, editable"
+            placeholder="Alamat otomatis terisi dari titik lokasi, bisa diedit"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+            className="flex w-full rounded-lg border px-3 py-2 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-3"
+            style={{ borderColor: '#c5dbd3', background: '#f7fcf9', color: '#1a2e28' }}
           />
         </div>
 

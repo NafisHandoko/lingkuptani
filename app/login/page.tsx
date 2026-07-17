@@ -2,16 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Field, FieldLabel } from '@/components/ui/field'
+import { Eye, EyeOff, Leaf, LogIn, Mail, Lock } from 'lucide-react'
 import Image from 'next/image'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 
 export default function LoginPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -30,7 +28,7 @@ export default function LoginPage() {
     const body = await res.json()
 
     if (!res.ok) {
-      setError(body.error ?? 'Failed to login, please try again.')
+      setError(body.error ?? 'Gagal masuk. Silakan coba lagi.')
       setPending(false)
       return
     }
@@ -40,50 +38,206 @@ export default function LoginPage() {
   }
 
   return (
-    <main className='relative min-h-screen overflow-hidden'>
-      <Image
-        src="/white-green-bg.jpg"
-        alt="Background of a farmer planting rice"
-        fill
-        priority
-        className="object-cover opacity-75 brightness-125"
-      />
-      <div className='absolute inset-0 bg-black/45' />
-      <div className='relative z-10 flex min-h-screen items-center justify-center p-6'>
-        <Card className='flex flex-col items-center p-6 shadow-2xl'>
-          <form className='flex w-full flex-col items-center gap-4' onSubmit={handleSubmit}>
-            <h1 className='text-2xl font-semibold'>Masuk ke akun Anda</h1>
-            <Field>
-              <FieldLabel>Masukkan email Anda</FieldLabel>
-              <Input
-                name='email'
-                type='email'
-                placeholder='Masukkan email Anda'
-                required
-              />
-            </Field>
-            <Field>
-              <FieldLabel>Masukkan kata sandi Anda</FieldLabel>
-              <Input
-                name='password'
-                type='password'
-                placeholder='Masukkan kata sandi Anda'
-                required
-              />
-            </Field>
+    <main className="min-h-screen flex" style={{ backgroundColor: '#EEEEEE' }}>
+      {/* Left panel – branding */}
+      <div
+        className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative flex-col items-center justify-center overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #1F6F5F 0%, #2FA084 50%, #6FCF97 100%)' }}
+      >
+        {/* Decorative circles */}
+        <div
+          className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-20"
+          style={{ background: 'rgba(255,255,255,0.3)' }}
+        />
+        <div
+          className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full opacity-15"
+          style={{ background: 'rgba(255,255,255,0.25)' }}
+        />
+        <div
+          className="absolute top-1/2 right-0 w-48 h-48 rounded-full opacity-10 -translate-y-1/2 translate-x-1/2"
+          style={{ background: 'rgba(255,255,255,0.4)' }}
+        />
+
+        <div className="relative z-10 flex flex-col items-center text-center px-12 max-w-xl">
+          {/* Logo */}
+          <div className="flex items-center justify-center w-20 h-20 rounded-2xl mb-6 shadow-2xl"
+            style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.3)' }}
+          >
+            <Leaf className="w-10 h-10 text-white" />
+          </div>
+
+          <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+            Selamat Datang di<br />
+            <span style={{ color: '#d4f0e2' }}>LingkupTani</span>
+          </h1>
+          <p className="text-white/80 text-lg leading-relaxed">
+            Platform peta pertanian yang memudahkan petani dan pengepul menemukan toko pertanian terdekat di seluruh Indonesia.
+          </p>
+
+          {/* Feature pills */}
+          <div className="flex flex-wrap justify-center gap-3 mt-8">
+            {['🗺️ Peta Interaktif', '🌱 Toko Pertanian', '📍 Lokasi Real-time'].map((feat) => (
+              <span
+                key={feat}
+                className="px-4 py-2 rounded-full text-sm font-medium text-white/90"
+                style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)' }}
+              >
+                {feat}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right panel – form */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 lg:px-12">
+        {/* Mobile logo */}
+        <div className="lg:hidden flex items-center gap-2 mb-8">
+          <div
+            className="flex items-center justify-center w-10 h-10 rounded-xl"
+            style={{ background: 'linear-gradient(135deg, #2FA084, #6FCF97)' }}
+          >
+            <Leaf className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-xl font-bold" style={{ color: '#1F6F5F' }}>LingkupTani</span>
+        </div>
+
+        <div
+          className="w-full max-w-md rounded-3xl shadow-2xl p-8"
+          style={{ background: '#ffffff', border: '1px solid rgba(111,207,151,0.25)' }}
+        >
+          {/* Header */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-1" style={{ color: '#1F6F5F' }}>Masuk ke Akun</h2>
+            <p className="text-sm" style={{ color: '#5a7a6e' }}>
+              Belum punya akun?{' '}
+              <a
+                href="/signup"
+                className="font-semibold transition-colors hover:underline"
+                style={{ color: '#2FA084' }}
+              >
+                Daftar di sini
+              </a>
+            </p>
+          </div>
+
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+            {/* Email */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-sm font-semibold" style={{ color: '#1F6F5F' }}>
+                Email
+              </label>
+              <div className="relative">
+                <Mail
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: '#6FCF97' }}
+                />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="petani@email.com"
+                  required
+                  className="w-full h-11 pl-10 pr-4 rounded-xl text-sm transition-all outline-none"
+                  style={{
+                    border: '1.5px solid #c5dbd3',
+                    background: '#f7fcf9',
+                    color: '#1a2e28',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#6FCF97'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(111,207,151,0.2)'; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#c5dbd3'; e.currentTarget.style.boxShadow = 'none'; }}
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-sm font-semibold" style={{ color: '#1F6F5F' }}>
+                Kata Sandi
+              </label>
+              <div className="relative">
+                <Lock
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: '#6FCF97' }}
+                />
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Masukkan kata sandi"
+                  required
+                  className="w-full h-11 pl-10 pr-10 rounded-xl text-sm transition-all outline-none"
+                  style={{
+                    border: '1.5px solid #c5dbd3',
+                    background: '#f7fcf9',
+                    color: '#1a2e28',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#6FCF97'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(111,207,151,0.2)'; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#c5dbd3'; e.currentTarget.style.boxShadow = 'none'; }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: '#5a7a6e' }}
+                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Error message */}
             {error && (
-              <p className='w-full rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive'>
+              <div
+                className="px-4 py-3 rounded-xl text-sm"
+                style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626' }}
+              >
                 {error}
-              </p>
+              </div>
             )}
-            <Button type='submit' disabled={pending}>
-              {pending ? 'Memproses…' : 'Masuk'}
-            </Button>
-            <a href="/signup" className='flex items-center gap-2 text-sm font-medium text-zinc-950 dark:text-zinc-50'>
-              Belum punya akun? Daftar di sini
-            </a>
+
+            {/* Submit */}
+            <button
+              id="login-submit"
+              type="submit"
+              disabled={pending}
+              className="h-12 w-full rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                background: pending
+                  ? '#a8dfc2'
+                  : 'linear-gradient(135deg, #6FCF97 0%, #2FA084 100%)',
+                boxShadow: pending ? 'none' : '0 4px 15px rgba(111,207,151,0.4)',
+              }}
+              onMouseEnter={(e) => {
+                if (!pending) {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #2FA084 0%, #1F6F5F 100%)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(47,160,132,0.45)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!pending) {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #6FCF97 0%, #2FA084 100%)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(111,207,151,0.4)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+            >
+              {pending ? (
+                <>
+                  <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Memproses…
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4" />
+                  Masuk
+                </>
+              )}
+            </button>
           </form>
-        </Card>
+        </div>
       </div>
     </main>
   )
