@@ -124,7 +124,7 @@ export default function StoreForm({
   }, [name, coords, address, price, contact, demand, onSubmit]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-0 flex-1">
       {/* Location picker map (Geoapify) */}
       <div className="relative mx-5 h-48 shrink-0 overflow-hidden rounded-xl border">
         <LocationPickerMap value={coords} onChange={applyLocation} />
