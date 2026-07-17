@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { buyer, demand } = body;
+    const { buyer, demand, verified } = body;
 
     if (!buyer) {
       return NextResponse.json({ error: "name is required" }, { status: 400 });
@@ -79,6 +79,7 @@ export async function POST(request: Request) {
           buyer,
           demand,
           seller: session.user.id,
+          verified: false
         },
       ])
       .select()
