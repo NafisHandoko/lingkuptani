@@ -67,12 +67,12 @@ export default function StoreInfoDialog({
         <DialogHeader className="pb-2">
           <DialogTitle>
             <Store className="size-5 text-primary" />
-            {isEdit ? "Store Details" : "Add Store"}
+            {isEdit ? "Detail Toko" : "Tambah Toko"}
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update your store info. Location point & address from Geoapify."
-              : "Set the store's location point; the address is auto-filled from the coordinates."}
+              ? "Perbarui info toko Anda. Titik lokasi & alamat dari Geoapify."
+              : "Tentukan titik lokasi toko; alamat terisi otomatis dari koordinat."}
           </DialogDescription>
         </DialogHeader>
 
@@ -84,7 +84,7 @@ export default function StoreInfoDialog({
           <StoreForm
             key={existing?.id ?? "new"}
             initial={isEdit ? initial : undefined}
-            submitLabel={isEdit ? "Save Changes" : "Add Store"}
+            submitLabel={isEdit ? "Simpan Perubahan" : "Tambah Toko"}
             submitting={submitting}
             errorMessage={mutationError}
             onSubmit={handleSubmit}
