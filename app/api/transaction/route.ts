@@ -81,7 +81,7 @@ export async function POST(request: Request) {
           buyer,
           demand,
           seller: session.user.id,
-          verified: false
+          status: "pending"
         },
       ])
       .select()
