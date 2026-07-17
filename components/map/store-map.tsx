@@ -13,7 +13,6 @@ import {
   Store as StoreIcon,
   Bell,
   History,
-  DollarSign,
   Banknote
 } from "lucide-react";
 
@@ -176,6 +175,7 @@ export default function StoreMap() {
                       <p className="text-xs text-muted-foreground">Kebutuhan terpenuhi</p>
                     )}
 					<SellInfoDialog
+            tokoId={store.id}
 						trigger={
 						<Button
 							className="rounded-full shadow-lg w-full"

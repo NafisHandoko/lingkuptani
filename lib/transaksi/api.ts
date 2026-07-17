@@ -16,28 +16,32 @@ async function parse<T>(res: Response): Promise<T> {
 
 // GET all stores
 export async function fetchTransaksiList(): Promise<Transaksi[]> {
-  return parse<Transaksi[]>(await fetch("/api/transaksi", { cache: "no-store" }));
+  return parse<Transaksi[]>(await fetch("/api/transaction", { cache: "no-store" }));
 }
 
 // GET stores owned by the currently logged-in user.
 export async function fetchMyTransaksi(): Promise<Transaksi[]> {
   return parse<Transaksi[]>(
-    await fetch("/api/transaksi?mine=true", { cache: "no-store" }),
+    await fetch("/api/transaction?mine=true", { cache: "no-store" }),
   );
 }
 
 // GET a single store by id
 export async function fetchTransaksiById(id: number): Promise<Transaksi> {
-  return parse<Transaksi>(await fetch(`/api/transaksi/${id}`, { cache: "no-store" }));
+  return parse<Transaksi>(await fetch(`/api/transaction/${id}`, { cache: "no-store" }));
 }
 
 // POST a new store.
 export async function createTransaksi(input: TransaksiInput): Promise<Transaksi> {
   return parse<Transaksi>(
-    await fetch("/api/transaksi", {
+    await fetch("/api/transaction", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
+      body: JSON.stringify({
+        toko_id: input.toko_id,
+        demand: input.demand,
+        verified: false,
+      }),
     }),
   );
 }
@@ -45,7 +49,7 @@ export async function createTransaksi(input: TransaksiInput): Promise<Transaksi>
 // PATCH update a store by id.
 export async function updateTransaksi(id: number, input: TransaksiInput): Promise<Transaksi> {
   return parse<Transaksi>(
-    await fetch(`/api/transaksi/${id}`, {
+    await fetch(`/api/transaction/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),

@@ -8,7 +8,7 @@ export type Demand = DemandItem[];
 
 export type Transaksi = {
   id: number;
-  toko_id: string;
+  toko_id: number;
   user_id: number;
   demand: Demand;
   verified: boolean;
@@ -19,6 +19,7 @@ export type Transaksi = {
 export type TransaksiInput = {
   demand: Demand;
   verified: boolean;
+  toko_id?: number;
 };
 
 export const EMPTY_DEMAND: Demand = [{ commodity: "Padi", price: 50000, demand: 100 }];

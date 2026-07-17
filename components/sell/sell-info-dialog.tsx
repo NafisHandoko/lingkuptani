@@ -11,9 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import StoreForm from "@/components/toko/store-form";
 import { useCreateTransaksi, useMyTransaksi, useTransaksi, useUpdateTransaksi } from "@/lib/transaksi/hooks";
-import type { Toko, TokoInput } from "@/lib/toko/types";
 import SellForm from "./sell-form";
 import { Transaksi, TransaksiInput } from "@/lib/transaksi/types";
 
@@ -27,14 +25,16 @@ function toInput(t: Transaksi): TransaksiInput {
 
 export default function SellInfoDialog({
   trigger,
+  tokoId,
 }: {
   trigger: React.ReactNode;
+  tokoId: number;
 }) {
   const [open, setOpen] = useState(false);
 
   // Look up the user's store; if it exists - detail/edit mode, otherwise - create.
   const myToko = useMyTransaksi(open);
-  const existing = myToko.data?.[0] ?? null;
+  const existing = (myToko.data as Transaksi[] | undefined)?.[0] ?? null;
   const isEdit = existing != null;
 
   // Fetch the detail by id (fulfils the "get by id" requirement) for edit mode.
@@ -53,7 +53,7 @@ export default function SellInfoDialog({
 
   const handleSubmit = (input: TransaksiInput) => {
     const mutation = isEdit ? updateMut : createMut;
-    mutation.mutate(input, { onSuccess: () => setOpen(false) });
+    mutation.mutate({ ...input, toko_id: tokoId }, { onSuccess: () => setOpen(false) });
   };
 
   return (
