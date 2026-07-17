@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Store } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   Dialog,
@@ -11,50 +12,74 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useCreateTransaksi, useMyTransaksi, useTransaksi, useUpdateTransaksi } from "@/lib/transaksi/hooks";
+import { updateToko } from "@/lib/toko/api";
+import { tokoKeys } from "@/lib/toko/hooks";
+import type { Demand, Toko, TokoInput } from "@/lib/toko/types";
+import { createTransaksi } from "@/lib/transaksi/api";
+import { transaksiKeys } from "@/lib/transaksi/hooks";
+import type { TransaksiInput } from "@/lib/transaksi/types";
 import SellForm from "./sell-form";
-import { Transaksi, TransaksiInput } from "@/lib/transaksi/types";
 
-// Toko (api response) - TokoInput (form payload).
-function toInput(t: Transaksi): TransaksiInput {
+function subtractDemand(storeDemand: Demand, soldDemand: Demand): Demand {
+  return storeDemand
+    .map((storeItem) => {
+      const soldItem = soldDemand.find((item) => item.commodity === storeItem.commodity);
+      const soldAmount = soldItem?.demand ?? 0;
+
+      return {
+        ...storeItem,
+        demand: Math.max(storeItem.demand - soldAmount, 0),
+      };
+    })
+    .filter((item) => item.demand > 0);
+}
+
+function toTokoInput(toko: Toko, demand: Demand): TokoInput {
   return {
-    demand: t.demand,
-	verified: t.verified
+    name: toko.name,
+    longitude: toko.longitude,
+    latitude: toko.latitude,
+    demand,
+    price: toko.price,
+    contact: toko.contact,
+    address: toko.address,
   };
 }
 
 export default function SellInfoDialog({
   trigger,
-  tokoId,
+  toko,
 }: {
   trigger: React.ReactNode;
-  tokoId: number;
+  toko: Toko;
 }) {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Look up the user's store; if it exists - detail/edit mode, otherwise - create.
-  const myToko = useMyTransaksi(open);
-  const existing = (myToko.data as Transaksi[] | undefined)?.[0] ?? null;
-  const isEdit = existing != null;
+  const commodityOptions = toko.demand.filter((item) => item.demand > 0);
 
-  // Fetch the detail by id (fulfils the "get by id" requirement) for edit mode.
-  const detail = useTransaksi(open && existing ? existing.id : null);
+  const sellMutation = useMutation({
+    mutationFn: async (input: TransaksiInput) => {
+      const createdTransaction = await createTransaksi({
+        ...input,
+        toko_id: toko.id,
+      });
 
-  const createMut = useCreateTransaksi();
-  const updateMut = useUpdateTransaksi(existing?.id ?? -1);
+      const remainingDemand = subtractDemand(toko.demand, input.demand);
+      await updateToko(toko.id, toTokoInput(toko, remainingDemand));
 
-  const submitting = createMut.isPending || updateMut.isPending;
-  const mutationError =
-    (createMut.error as Error | null)?.message ??
-    (updateMut.error as Error | null)?.message ??
-    null;
+      return createdTransaction;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: transaksiKeys.all }),
+        queryClient.invalidateQueries({ queryKey: tokoKeys.all }),
+      ]);
+      setOpen(false);
+    },
+  });
 
-  const loading = myToko.isLoading || (isEdit && detail.isLoading);
-
-  const handleSubmit = (input: TransaksiInput) => {
-    const mutation = isEdit ? updateMut : createMut;
-    mutation.mutate({ ...input, toko_id: tokoId }, { onSuccess: () => setOpen(false) });
-  };
+  const mutationError = (sellMutation.error as Error | null)?.message ?? null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -66,21 +91,22 @@ export default function SellInfoDialog({
             Buat transaksi
           </DialogTitle>
           <DialogDescription>
-              Buat penjualan di sini.
+            Buat penjualan di sini.
           </DialogDescription>
         </DialogHeader>
 
-        {loading ? (
+        {sellMutation.isPending ? (
           <div className="flex h-64 items-center justify-center">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <SellForm
-            key={existing?.id ?? "new"}
-            submitLabel={isEdit ? "Save Changes" : "Add Store"}
-            submitting={submitting}
+            key={toko.id}
+            commodityOptions={commodityOptions}
+            submitLabel="Buat transaksi"
+            submitting={sellMutation.isPending}
             errorMessage={mutationError}
-            onSubmit={handleSubmit}
+            onSubmit={(input) => sellMutation.mutate(input)}
           />
         )}
       </DialogContent>
