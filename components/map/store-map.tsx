@@ -34,7 +34,7 @@ import type { Toko } from "@/lib/toko/types";
 import ConfirmationDialog from "../confirmation/confirmation-dialog";
 import { Card, CardContent, CardTitle } from "../ui/card";
 import TransactionHistoryDialog from "../history/transaction-history";
-import SellInfoDialog from "../sell/sell-info-dialog";
+import SellInfoDialog from "@/components/sell/sell-info-dialog";
 
 // User location marker icon
 const userIcon = L.divIcon({
@@ -174,18 +174,20 @@ export default function StoreMap() {
                     ) : (
                       <p className="text-xs text-muted-foreground">Kebutuhan terpenuhi</p>
                     )}
-					<SellInfoDialog
-            tokoId={store.id}
-						trigger={
-						<Button
-							className="rounded-full shadow-lg w-full"
-							aria-label="Jual ke sini"
-						>
-							<Banknote className="size-4" />
-							<span className="hidden sm:inline">Jual ke sini</span>
-						</Button>
-						}
-					/>
+					{store.demand.reduce((sum, item) => sum + item.demand, 0) > 0 && (
+            <SellInfoDialog
+            toko={store}
+							trigger={
+							<Button
+								className="rounded-full shadow-lg w-full"
+								aria-label="Jual ke sini"
+							>
+								<Banknote className="size-4" />
+								<span className="hidden sm:inline">Jual ke sini</span>
+							</Button>
+							}
+						/>
+					)}
                   </CardContent>
                 </Card>
               </div>

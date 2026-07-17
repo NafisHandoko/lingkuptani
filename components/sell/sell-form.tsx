@@ -1,33 +1,18 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import dynamic from "next/dynamic";
-import { Loader2, LocateFixed, MapPin, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { reverseGeocode } from "@/lib/geoapify";
-import { EMPTY_DEMAND, type Demand, type DemandItem, type TokoInput } from "@/lib/toko/types";
+import { EMPTY_DEMAND, type Demand, type DemandItem } from "@/lib/toko/types";
 import { TransaksiInput } from "@/lib/transaksi/types";
-
-const LocationPickerMap = dynamic(
-  () => import("@/components/map/location-picker-map"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center bg-muted">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    ),
-  },
-);
-
-type LatLng = { lat: number; lng: number };
 
 export type SellFormProps = {
   /** Initial values (for edit / detail mode). */
   initial?: TransaksiInput;
+  commodityOptions: DemandItem[];
   submitLabel?: string;
   submitting?: boolean;
   errorMessage?: string | null;
@@ -49,8 +34,38 @@ function updateDemandItem(
   );
 }
 
+function createDemandItem(): DemandItem {
+  return { commodity: "", price: 0, demand: 0 };
+}
+
+function getAvailableCommodityOptions(
+  options: DemandItem[],
+  demand: Demand,
+  currentIndex: number,
+): DemandItem[] {
+  const selectedElsewhere = new Set(
+    demand
+      .filter((_, index) => index !== currentIndex)
+      .map((item) => item.commodity),
+  );
+
+  return options.filter(
+    (option) =>
+      option.commodity === demand[currentIndex]?.commodity ||
+      !selectedElsewhere.has(option.commodity),
+  );
+}
+
+function getSelectedCommodityOption(
+  options: DemandItem[],
+  commodity: string,
+): DemandItem | undefined {
+  return options.find((option) => option.commodity === commodity);
+}
+
 export default function SellForm({
   initial,
+  commodityOptions,
   submitLabel = "Jual",
   submitting = false,
   errorMessage = null,
@@ -60,14 +75,12 @@ export default function SellForm({
 
   const handleSubmit = useCallback(() => {
     if (demand.length === 0) return;
-
-    const firstPrice = demand[0]?.price ?? 0;
     const input: TransaksiInput = {
       demand,
-	  verified: initial?.verified ?? false,
+      verified: initial?.verified ?? false,
     };
     onSubmit(input);
-  }, [demand, onSubmit]);
+  }, [demand, onSubmit, initial?.verified]);
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
@@ -79,12 +92,7 @@ export default function SellForm({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                setDemand((current) => [
-                  ...current,
-                  { commodity: "", price: 0, demand: 0 },
-                ])
-              }
+              onClick={() => setDemand((current) => [...current, createDemandItem()])}
               className="h-8"
             >
               <Plus className="size-4" />
@@ -116,14 +124,21 @@ export default function SellForm({
                   <Label htmlFor={`commodity-${index}`} className="text-xs text-muted-foreground">
                     Commodity
                   </Label>
-                  <Input
+                  <select
                     id={`commodity-${index}`}
-                    placeholder="Padi"
+                    className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
                     value={item.commodity}
                     onChange={(e) =>
                       setDemand((current) => updateDemandItem(current, index, { commodity: e.target.value }))
                     }
-                  />
+                  >
+                    <option value="">Select commodity</option>
+                    {getAvailableCommodityOptions(commodityOptions, demand, index).map((option) => (
+                      <option key={option.commodity} value={option.commodity}>
+                        {option.commodity} ({option.demand} kg)
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -147,17 +162,34 @@ export default function SellForm({
                     <Label htmlFor={`demand-${index}`} className="text-xs text-muted-foreground">
                       Demand
                     </Label>
+                    {(() => {
+                      const selectedCommodity = getSelectedCommodityOption(
+                        commodityOptions,
+                        item.commodity,
+                      );
+                      const maxDemand = selectedCommodity?.demand;
+
+                      return (
                     <Input
                       id={`demand-${index}`}
                       inputMode="numeric"
                       placeholder="100"
+                      max={maxDemand}
                       value={item.demand}
                       onChange={(e) =>
-                        setDemand((current) =>
-                          updateDemandItem(current, index, { demand: Number(e.target.value) || 0 }),
-                        )
+                        setDemand((current) => {
+                          const nextValue = Number(e.target.value) || 0;
+                          return updateDemandItem(current, index, {
+                            demand:
+                              typeof maxDemand === "number"
+                                ? Math.min(nextValue, maxDemand)
+                                : nextValue,
+                          });
+                        })
                       }
                     />
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

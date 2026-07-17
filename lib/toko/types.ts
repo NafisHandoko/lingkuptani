@@ -31,4 +31,4 @@ export type TokoInput = {
   address: string;
 };
 
-export const EMPTY_DEMAND: Demand = [{ commodity: "Padi", price: 50000, demand: 100 }];
+export const EMPTY_DEMAND: Demand = [{ commodity: "", price: 0, demand: 0 }];
