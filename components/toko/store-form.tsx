@@ -2,13 +2,13 @@
 
 import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
-import { Loader2, LocateFixed, MapPin } from "lucide-react";
+import { Loader2, LocateFixed, MapPin, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { reverseGeocode } from "@/lib/geoapify";
-import { EMPTY_DEMAND, type Demand, type TokoInput } from "@/lib/toko/types";
+import { EMPTY_DEMAND, type Demand, type DemandItem, type TokoInput } from "@/lib/toko/types";
 
 const LocationPickerMap = dynamic(
   () => import("@/components/map/location-picker-map"),
@@ -24,12 +24,6 @@ const LocationPickerMap = dynamic(
 
 type LatLng = { lat: number; lng: number };
 
-const DEMAND_FIELDS: { key: keyof Demand; label: string }[] = [
-  { key: "padi", label: "Padi" },
-  { key: "jagung", label: "Jagung" },
-  { key: "mangga", label: "Mangga" },
-];
-
 export type StoreFormProps = {
   /** Initial values (for edit / detail mode). */
   initial?: TokoInput;
@@ -39,6 +33,21 @@ export type StoreFormProps = {
   onSubmit: (input: TokoInput) => void;
 };
 
+function normalizeDemand(input?: Demand): Demand {
+  if (input?.length) return input;
+  return EMPTY_DEMAND;
+}
+
+function updateDemandItem(
+  items: Demand,
+  index: number,
+  patch: Partial<DemandItem>,
+): Demand {
+  return items.map((item, currentIndex) =>
+    currentIndex === index ? { ...item, ...patch } : item,
+  );
+}
+
 export default function StoreForm({
   initial,
   submitLabel = "Save Store",
@@ -46,13 +55,10 @@ export default function StoreForm({
   errorMessage = null,
   onSubmit,
 }: StoreFormProps) {
-  // Fields that come straight from api/toko (not from Geoapify).
   const [name, setName] = useState(initial?.name ?? "");
-  const [price, setPrice] = useState(initial?.price ?? "");
   const [contact, setContact] = useState(initial?.contact ?? "");
-  const [demand, setDemand] = useState<Demand>(initial?.demand ?? EMPTY_DEMAND);
+  const [demand, setDemand] = useState<Demand>(normalizeDemand(initial?.demand));
 
-  // Fields sourced from Geoapify: lat, lon, address.
   const [coords, setCoords] = useState<LatLng | null>(
     initial?.latitude && initial?.longitude
       ? { lat: Number(initial.latitude), lng: Number(initial.longitude) }
@@ -64,7 +70,6 @@ export default function StoreForm({
   const [geocoding, setGeocoding] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
 
-  // Set the coordinates, then auto-generate the address via Geoapify reverse geocode.
   const applyLocation = useCallback(async (p: LatLng) => {
     setCoords(p);
     setGeoError(null);
@@ -105,27 +110,26 @@ export default function StoreForm({
   }, [applyLocation]);
 
   const canSubmit =
-    name.trim() !== "" && coords !== null && address.trim() !== "" && !submitting;
+    name.trim() !== "" && coords !== null && address.trim() !== "" && demand.length > 0 && !submitting;
 
   const handleSubmit = useCallback(() => {
-    if (!coords) return;
+    if (!coords || demand.length === 0) return;
+
+    const firstPrice = demand[0]?.price ?? 0;
     const input: TokoInput = {
       name: name.trim(),
-      // Geoapify values are sent as strings to match the api/toko schema.
       latitude: String(coords.lat),
       longitude: String(coords.lng),
       address: address.trim(),
-      // Remaining fields come purely from the form.
-      price: price.trim(),
+      price: String(firstPrice),
       contact: contact.trim(),
       demand,
     };
     onSubmit(input);
-  }, [name, coords, address, price, contact, demand, onSubmit]);
+  }, [name, coords, address, contact, demand, onSubmit]);
 
   return (
     <div className="flex flex-col">
-      {/* Location picker map (Geoapify) */}
       <div className="relative mx-5 h-48 shrink-0 overflow-hidden rounded-xl border">
         <LocationPickerMap value={coords} onChange={applyLocation} />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] p-2">
@@ -162,7 +166,6 @@ export default function StoreForm({
           {locating ? "Detecting location…" : "Use My GPS Location"}
         </Button>
 
-        {/* Lat / Lon from Geoapify */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="lat">Latitude</Label>
@@ -196,7 +199,6 @@ export default function StoreForm({
           </div>
         </div>
 
-        {/* Address from Geoapify */}
         <div className="space-y-1.5">
           <Label htmlFor="address">
             Address
@@ -216,47 +218,105 @@ export default function StoreForm({
           />
         </div>
 
-        {/* Remaining fields come purely from api/toko */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="price">Price (Rp)</Label>
-            <Input
-              id="price"
-              inputMode="numeric"
-              placeholder="50000"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="contact">Contact</Label>
-            <Input
-              id="contact"
-              inputMode="tel"
-              placeholder="08123456789"
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="contact">Contact</Label>
+          <Input
+            id="contact"
+            inputMode="tel"
+            placeholder="08123456789"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+          />
         </div>
 
-        <div className="space-y-1.5">
-          <Label>Demand</Label>
-          <div className="grid grid-cols-3 gap-3">
-            {DEMAND_FIELDS.map((f) => (
-              <div key={f.key} className="space-y-1">
-                <span className="text-xs text-muted-foreground">{f.label}</span>
-                <Input
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={demand[f.key]}
-                  onChange={(e) =>
-                    setDemand((d) => ({
-                      ...d,
-                      [f.key]: Number(e.target.value) || 0,
-                    }))
-                  }
-                />
+        <div className="space-y-3 rounded-xl border p-4">
+          <div className="flex items-center justify-between gap-3">
+            <Label>Demand</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setDemand((current) => [
+                  ...current,
+                  { commodity: "", price: 0, demand: 0 },
+                ])
+              }
+              className="h-8"
+            >
+              <Plus className="size-4" />
+              Add commodity
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            {demand.map((item, index) => (
+              <div key={`${item.commodity || "commodity"}-${index}`} className="space-y-3 rounded-lg border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Commodity {index + 1}
+                  </span>
+                  {demand.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => setDemand((current) => current.filter((_, currentIndex) => currentIndex !== index))}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor={`commodity-${index}`} className="text-xs text-muted-foreground">
+                    Commodity
+                  </Label>
+                  <Input
+                    id={`commodity-${index}`}
+                    placeholder="Padi"
+                    value={item.commodity}
+                    onChange={(e) =>
+                      setDemand((current) => updateDemandItem(current, index, { commodity: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`price-${index}`} className="text-xs text-muted-foreground">
+                      Price (Rp)
+                    </Label>
+                    <Input
+                      id={`price-${index}`}
+                      inputMode="numeric"
+                      placeholder="50000"
+                      value={item.price}
+                      onChange={(e) =>
+                        setDemand((current) =>
+                          updateDemandItem(current, index, { price: Number(e.target.value) || 0 }),
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`demand-${index}`} className="text-xs text-muted-foreground">
+                      Demand
+                    </Label>
+                    <Input
+                      id={`demand-${index}`}
+                      inputMode="numeric"
+                      placeholder="100"
+                      value={item.demand}
+                      onChange={(e) =>
+                        setDemand((current) =>
+                          updateDemandItem(current, index, { demand: Number(e.target.value) || 0 }),
+                        )
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -267,7 +327,9 @@ export default function StoreForm({
             {errorMessage ?? geoError}
           </p>
         )}
+      </div>
 
+      <div className="p-5">
         <Button
           type="button"
           onClick={handleSubmit}

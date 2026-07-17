@@ -1,8 +1,10 @@
-export type Demand = {
-  padi: number;
-  jagung: number;
-  mangga: number;
+export type DemandItem = {
+  commodity: string;
+  price: number;
+  demand: number;
 };
+
+export type Demand = DemandItem[];
 
 // Store data shape as returned by GET /api/toko
 export type Toko = {
@@ -29,4 +31,4 @@ export type TokoInput = {
   address: string;
 };
 
-export const EMPTY_DEMAND: Demand = { padi: 0, jagung: 0, mangga: 0 };
+export const EMPTY_DEMAND: Demand = [{ commodity: "Padi", price: 50000, demand: 100 }];
