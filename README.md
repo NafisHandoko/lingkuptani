@@ -47,30 +47,30 @@ The application uses Next.js with App Router, custom Supabase hooks for state sy
 
 ```mermaid
 graph TD
-    subgraph Frontend / Next.js Pages (app/)
-        UI[UI Components & Layout]
-        MapPage[Map View /map]
-        DashPage[Dashboard /dashboard]
-        AuthPage[Login & Signup]
+    subgraph Frontend ["Frontend / Next.js Pages (app/)"]
+        UI["UI Components & Layout"]
+        MapPage["Map View /map"]
+        DashPage["Dashboard /dashboard"]
+        AuthPage["Login & Signup"]
     end
     
-    subgraph Components Layer (components/)
-        MapComp[Map Store-Map]
-        TokoComp[Store Detail & Management]
-        SellComp[Negotiation & Sell Offer]
-        HistComp[Transaction History]
+    subgraph Components ["Components Layer (components/)"]
+        MapComp["Map Store-Map"]
+        TokoComp["Store Detail & Management"]
+        SellComp["Negotiation & Sell Offer"]
+        HistComp["Transaction History"]
     end
     
-    subgraph Data & Hooks Layer (lib/)
-        HooksToko[Toko hooks & api]
-        HooksTx[Transaksi hooks & api]
-        HooksUser[Users hooks & api]
-        Geo[Geoapify Service]
+    subgraph Data ["Data & Hooks Layer (lib/)"]
+        HooksToko["Toko hooks & api"]
+        HooksTx["Transaksi hooks & api"]
+        HooksUser["Users hooks & api"]
+        Geo["Geoapify Service"]
     end
     
-    subgraph Backend Layer (Supabase)
-        SupaAuth[Supabase Auth]
-        SupaDB[(Supabase PostgreSQL)]
+    subgraph Backend ["Backend Layer (Supabase)"]
+        SupaAuth["Supabase Auth"]
+        SupaDB[("Supabase PostgreSQL")]
     end
     
     UI --> MapComp
